@@ -20,7 +20,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).parent.parent
 SCREENSHOTS_DIR = ROOT / "screenshots"
-BASE_URL = "http://localhost:5001"
+BASE_URL = "http://localhost:5010"
 EMAIL = "demo@mentastic.com"
 PASSWORD = "demo1234"
 

@@ -9,3 +9,4 @@ PyJWT
 python-dotenv
 httpx
 pydantic
+markdown

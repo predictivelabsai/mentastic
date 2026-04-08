@@ -442,21 +442,6 @@ class UI:
                         if (form && textarea.value.trim()) form.requestSubmit();
                     }
                 }
-                // Markdown rendering with marked.js
-                function renderAllMarked() {
-                    document.querySelectorAll('.marked').forEach(function(el) {
-                        if (el.dataset.rendered) return;
-                        var raw = el.textContent || el.innerText;
-                        if (raw && window.marked) {
-                            el.innerHTML = marked.parse(raw);
-                            el.dataset.rendered = '1';
-                        }
-                    });
-                }
-                renderAllMarked();
-                var chatObs = new MutationObserver(renderAllMarked);
-                var chatArea = document.getElementById('chat-messages');
-                if (chatArea) chatObs.observe(chatArea, {childList: true, subtree: true, characterData: true});
             """),
             Div(id="agui-js", style="display:none"),
             cls="chat-container welcome-active",
@@ -647,7 +632,7 @@ class AGUIThread:
             id="trace-content", hx_swap_oob="beforeend",
         ))
 
-        # Save assistant message
+        # Save assistant message and render markdown server-side
         if full_response:
             asst_dict = {"role": "assistant", "content": full_response, "message_id": asst_mid}
             self._messages.append(asst_dict)
@@ -656,9 +641,19 @@ class AGUIThread:
             except Exception:
                 pass
 
-        # Re-render markdown + scroll + re-enable input
+        # Replace streamed raw text with server-rendered markdown HTML
+        import markdown as _md
+        rendered_html = _md.markdown(full_response or "", extensions=["tables", "fenced_code", "nl2br"])
+        await self.send(Div(
+            Div(NotStr(rendered_html), cls="chat-message-content"),
+            cls="chat-message chat-assistant",
+            id=f"message-{asst_mid}",
+            hx_swap_oob="outerHTML",
+        ))
+        await self._send_js(_SCROLL_CHAT_JS)
+
+        # Re-enable input + scroll
         await self._send_js(
-            "renderAllMarked();" + _SCROLL_CHAT_JS +
             "var b=document.querySelector('.chat-input-button'),t=document.getElementById('chat-input');"
             "if(b){b.disabled=false;b.classList.remove('sending')}"
             "if(t){t.disabled=false;t.placeholder='Talk to Patrick about your performance, readiness, or recovery...\\nShift+Enter for new line';t.focus()}"
@@ -731,7 +726,7 @@ app, rt = fast_app(
     exts="ws",
     secret_key=os.getenv("JWT_SECRET", os.urandom(32).hex()),
     hdrs=[
-        Script(src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"),
+        MarkdownJS(), HighlightJS(langs=['python', 'javascript']),
         Link(rel="manifest", href="/manifest.json"),
         Meta(name="theme-color", content="#0d9488"),
         Meta(name="viewport", content="width=device-width, initial-scale=1, viewport-fit=cover"),
@@ -1071,12 +1066,4 @@ def about():
     )
 
 
-# ---------------------------------------------------------------------------
-# Main
-# ---------------------------------------------------------------------------
-
-if __name__ == "__main__":
-    import uvicorn
-    port = int(os.getenv("PORT", "5010"))
-    reload = os.getenv("RELOAD", "true").lower() == "true"
-    uvicorn.run("app:app", host="0.0.0.0", port=port, reload=reload)
+serve(port=int(os.getenv("PORT", "5010")))

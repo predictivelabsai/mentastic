@@ -67,9 +67,24 @@ bcrypt + FastHTML session dict. No decorators — routes check `session.get("use
 
 - **OOB Swaps**: All WebSocket updates use `hx_swap_oob` to update multiple DOM targets (chat messages, trace panel, input form, conversation list) from a single WS message.
 - **Guard flag**: `window._aguiProcessing` JS flag prevents double-submit while streaming.
-- **Markdown**: `marked.js` renders `.marked` elements; a MutationObserver auto-renders new content.
+- **Markdown rendering**: Streamed tokens arrive as raw text. After streaming completes, the full response is rendered server-side with Python `markdown` library and sent as an OOB swap replacing the streaming span. Historical messages use FastHTML's `MarkdownJS()` with the `.marked` class for client-side rendering.
 - **Thread lifecycle**: Threads are in-memory only. Messages persist in DB, but the AGUIThread object (with its agent and WS connections) is lost on app restart.
 - **Static files**: FastHTML serves from `static/` directory at root URLs (`/sw.js`, not `/static/sw.js`). The `/manifest.json` route is explicit because FastHTML doesn't auto-serve `.json`.
+
+## FastHTML Best Practices
+
+Reference: `fashtml-ctx.txt` in the repo root.
+
+- Use `serve()` instead of `if __name__ == "__main__"` + `uvicorn.run()` — `serve()` handles this internally
+- Use `MarkdownJS()` and `HighlightJS()` in `hdrs` for client-side markdown/code rendering
+- Use `NotStr()` to inject raw HTML into FastTags without escaping (e.g. `Div(NotStr(rendered_html))`)
+- Prefer Python over JS. Never use React/Vue/Svelte — FastHTML is HTMX-first
+- `cls` maps to `class`, `_for` maps to `for`, `hx_get` maps to `hx-get` (underscores → hyphens)
+- Route functions can be used directly in attributes (`hx_get=my_route` instead of `hx_get="/path"`)
+- FastHTML is NOT FastAPI — it's for HTML-first apps, not API services
+- When returning responses: FTs/tuples auto-render to HTML; `Title` in a tuple auto-goes to `<head>`
+- WebSocket pattern: `fast_app(exts='ws')` + `Div(hx_ext='ws', ws_connect='/ws')` + `Form(ws_send=True)`
+- HTMX OOB swaps do NOT execute `<script>` tags — use server-side rendering instead of client-side JS for dynamic content updates
 
 ## Environment Variables
 
