@@ -1,0 +1,11 @@
+python-fasthtml
+langgraph
+langchain-openai
+langchain-core
+sqlalchemy
+psycopg2-binary
+bcrypt
+PyJWT
+python-dotenv
+httpx
+pydantic

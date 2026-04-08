@@ -1,0 +1,15 @@
+services:
+  app:
+    build: .
+    ports:
+      - "5010:5010"
+    env_file: .env
+    environment:
+      - RELOAD=false
+    healthcheck:
+      test: ["CMD", "python", "-c", "import requests; requests.get('http://localhost:5010/')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+    restart: unless-stopped
