@@ -2,8 +2,6 @@
 
 Human performance and readiness platform — AI-powered decision support for individuals, teams, and institutions. Combines LangGraph agents, WebSocket streaming, and a 3-pane FastHTML chat interface with Patrick, your AI companion for performance, readiness, and resilience.
 
-![Mentastic Demo](docs/demo_video.gif)
-
 ## Features
 
 **Patrick AI Companion** — 6 tools for human performance and readiness:
@@ -29,58 +27,11 @@ Human performance and readiness platform — AI-powered decision support for ind
 - PWA support (manifest, service worker, responsive CSS)
 - Docker deployment ready
 
-## Screenshots
+## Demo
 
-### Welcome Screen
-6 action cards for quick access to Patrick's tools:
+![Mentastic Demo](docs/demo_video.gif)
 
-![Welcome Screen](screenshots/03_welcome_cards.png)
-
-### Readiness Check-In
-Patrick guides you through logging your current state:
-
-![Readiness Check-In](screenshots/04_readiness_checkin.png)
-
-### Performance Scan
-AI-guided conversation about your performance:
-
-![Performance Scan](screenshots/05_performance_scan.png)
-
-### Recovery Plan
-Personalized recovery recommendations:
-
-![Recovery Plan](screenshots/06_recovery_plan.png)
-
-### Stress & Load Analysis
-Assess stress levels and burnout risk:
-
-![Stress & Load](screenshots/07_stress_load.png)
-
-### Resilience Builder with Trace Panel
-Guided exercises with tool call trace visible:
-
-![Resilience Builder](screenshots/08_resilience_builder.png)
-
-### Conversation History
-All conversations saved and resumable:
-
-![Conversation History](screenshots/10_conversation_history.png)
-
-### About Page
-Full platform description and value propositions:
-
-![About Page](screenshots/11_about_page.png)
-
-### Mobile Responsive
-Single-column layout on mobile devices:
-
-![Mobile View](screenshots/13_mobile_view.png)
-
-## Demo Video
-
-Full walkthrough of all features: [docs/demo_video.mp4](docs/demo_video.mp4)
-
-Animated preview: [docs/demo_video.gif](docs/demo_video.gif)
+Full walkthrough video: [docs/demo_video.mp4](docs/demo_video.mp4) | All screenshots: [screenshots/](screenshots/)
 
 ## Quick Start
 
@@ -103,14 +54,14 @@ psql $DB_URL -f sql/01_create_schema.sql
 
 # Start
 python app.py
-# Open http://localhost:5001
+# Open http://localhost:5010
 ```
 
 ### Docker
 
 ```bash
 docker compose up --build
-# Open http://localhost:5001
+# Open http://localhost:5010
 ```
 
 ## Environment Variables
