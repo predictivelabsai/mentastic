@@ -143,11 +143,17 @@ async def run():
         await page.screenshot(path=str(SCREENSHOTS_DIR / "09_conversation_history.png"))
         print("  captured  09_conversation_history.png")
 
-        # --- 10: Integrations page ---
+        # --- 10: Dashboard ---
+        await page.goto(f"{BASE_URL}/dashboard")
+        await asyncio.sleep(2)
+        await page.screenshot(path=str(SCREENSHOTS_DIR / "10_dashboard.png"))
+        print("  captured  10_dashboard.png")
+
+        # --- 10b: Integrations page ---
         await page.goto(f"{BASE_URL}/integrations")
         await asyncio.sleep(2)
-        await page.screenshot(path=str(SCREENSHOTS_DIR / "10_integrations.png"))
-        print("  captured  10_integrations.png")
+        await page.screenshot(path=str(SCREENSHOTS_DIR / "10b_integrations.png"))
+        print("  captured  10b_integrations.png")
 
         # --- 11: About page ---
         await page.goto(f"{BASE_URL}/about")

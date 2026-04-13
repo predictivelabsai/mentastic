@@ -135,9 +135,27 @@ async def run():
         await send_chat(page, "I want to work on resilience building", 15)
         await capture(page, "chat_resilience", 1)
 
+        # ===== DASHBOARD =====
+        await page.goto(f"{BASE_URL}/dashboard")
+        await asyncio.sleep(2)
+        await capture(page, "dashboard_top", 1.5)
+
+        await page.evaluate("window.scrollTo(0, 500)")
+        await asyncio.sleep(0.5)
+        await capture(page, "dashboard_charts", 1)
+
         # ===== INTEGRATIONS =====
         await page.goto(f"{BASE_URL}/integrations")
         await capture(page, "integrations", 2)
+
+        # ===== CONNECT INTEGRATION =====
+        await page.goto(f"{BASE_URL}/integrations/connect?name=Google Fit")
+        await capture(page, "integration_connect", 1.5)
+
+        # Confirm connection
+        await page.goto(f"{BASE_URL}/integrations/confirm?name=Google Fit")
+        await asyncio.sleep(1)
+        await capture(page, "integration_connected", 1)
 
         # ===== ABOUT =====
         await page.goto(f"{BASE_URL}/about")
