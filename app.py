@@ -722,17 +722,24 @@ class AGUISetup:
 # FastHTML App
 # ---------------------------------------------------------------------------
 
+from utils.clerk import is_clerk_enabled, verify_clerk_token, get_clerk_user, CLERK_PUBLISHABLE_KEY
+
+# Build headers — include Clerk JS if configured
+_hdrs = [
+    MarkdownJS(), HighlightJS(langs=['python', 'javascript']),
+    Link(rel="manifest", href="/manifest.json"),
+    Meta(name="theme-color", content="#0d9488"),
+    Meta(name="viewport", content="width=device-width, initial-scale=1, viewport-fit=cover"),
+    Meta(name="apple-mobile-web-app-capable", content="yes"),
+    Meta(name="apple-mobile-web-app-status-bar-style", content="black-translucent"),
+]
+if is_clerk_enabled():
+    _hdrs.append(Script(src="https://cdn.jsdelivr.net/npm/@clerk/clerk-js@latest/dist/clerk.browser.js"))
+
 app, rt = fast_app(
     exts="ws",
     secret_key=os.getenv("JWT_SECRET", os.urandom(32).hex()),
-    hdrs=[
-        MarkdownJS(), HighlightJS(langs=['python', 'javascript']),
-        Link(rel="manifest", href="/manifest.json"),
-        Meta(name="theme-color", content="#0d9488"),
-        Meta(name="viewport", content="width=device-width, initial-scale=1, viewport-fit=cover"),
-        Meta(name="apple-mobile-web-app-capable", content="yes"),
-        Meta(name="apple-mobile-web-app-status-bar-style", content="black-translucent"),
-    ],
+    hdrs=_hdrs,
     static_path="static",
 )
 
@@ -867,10 +874,55 @@ def _session_login(session, user: Dict):
     if display.startswith("$2") or not display.strip():
         display = user.get("email", "user").split("@")[0]
     session["user"] = {
-        "user_id": str(user["user_id"]),
-        "email": user["email"],
+        "user_id": str(user.get("user_id") or user.get("clerk_id", "")),
+        "email": user.get("email", ""),
         "display_name": display,
     }
+
+
+def _check_clerk_session(request, session) -> Optional[Dict]:
+    """Check for Clerk session token in cookie or header and sync to session."""
+    if not is_clerk_enabled():
+        return session.get("user")
+
+    # Already synced in this session
+    if session.get("user"):
+        return session["user"]
+
+    # Check for Clerk __session cookie
+    token = request.cookies.get("__session") or ""
+    if not token:
+        auth_header = request.headers.get("authorization", "")
+        if auth_header.startswith("Bearer "):
+            token = auth_header[7:]
+
+    if not token:
+        return None
+
+    payload = verify_clerk_token(token)
+    if not payload:
+        return None
+
+    clerk_user_id = payload.get("sub")
+    if not clerk_user_id:
+        return None
+
+    # Fetch user details from Clerk and sync to our session + DB
+    clerk_user = get_clerk_user(clerk_user_id)
+    if clerk_user:
+        # Ensure user exists in our DB
+        from utils.auth import get_user_by_email, create_user
+        email = clerk_user["email"]
+        if email:
+            existing = get_user_by_email(email)
+            if not existing:
+                existing = create_user(email, password="clerk-managed", display_name=clerk_user["display_name"])
+            if existing:
+                clerk_user["user_id"] = existing["user_id"]
+        _session_login(session, clerk_user)
+        return session["user"]
+
+    return None
 
 
 def _auth_layout(title: str, card_parts: list):
@@ -968,7 +1020,9 @@ _INTEGRATIONS = [
 ]
 
 @rt("/")
-def landing(session):
+def landing(request, session):
+    if is_clerk_enabled():
+        _check_clerk_session(request, session)
     if session.get("user"):
         return RedirectResponse("/chat", status_code=303)
 
@@ -1001,18 +1055,17 @@ def landing(session):
                 A("Learn More", href="/about", cls="btn-secondary"),
                 cls="hero-buttons",
             ),
-            # Mini-chat preview
+            # Anonymous mini-chat — real WebSocket connection to Patrick
             Div(
                 Div("Try Patrick — your AI performance companion", cls="mini-chat-header"),
-                Div("Hi Patrick, I've been feeling drained after meetings all week.", cls="mini-chat-msg"),
-                Div("That sounds like cognitive fatigue from sustained high-demand interactions. "
-                    "Let's look at your patterns — when do you feel most alert? "
-                    "We can find recovery windows in your schedule.", cls="mini-chat-msg patrick"),
-                Div(
-                    Input(placeholder="Ask Patrick anything...", disabled=True),
-                    Button("Try it", onclick="window.location.href='/register'"),
-                    cls="mini-chat-input",
+                Div(id="anon-messages"),
+                Form(
+                    Input(id="anon-input", name="msg", placeholder="Ask Patrick anything...", autocomplete="off"),
+                    Hidden(name="thread_id", value=str(_uuid.uuid4())),
+                    Button("Send"),
+                    cls="mini-chat-input", id="anon-form", ws_send=True,
                 ),
+                hx_ext="ws", ws_connect=f"/anon-ws/{_uuid.uuid4()}",
                 cls="mini-chat",
             ),
             cls="hero",
@@ -1109,11 +1162,95 @@ def landing(session):
 
 
 # ---------------------------------------------------------------------------
+# Anonymous mini-chat WebSocket (landing page)
+# ---------------------------------------------------------------------------
+
+_anon_msg_count: Dict[str, int] = {}  # track messages per anon thread
+_ANON_MSG_LIMIT = 5  # after this many messages, suggest signup
+
+@app.ws("/anon-ws/{thread_id}")
+async def anon_ws(thread_id: str, msg: str, send):
+    """Handle anonymous chat on the landing page — limited messages, then nudge to register."""
+    from langchain_core.messages import HumanMessage, AIMessage
+    from utils.agent import create_mentastic_agent, set_current_user
+
+    count = _anon_msg_count.get(thread_id, 0)
+    _anon_msg_count[thread_id] = count + 1
+
+    # Show user message
+    await send(Div(
+        Div(msg, cls="mini-chat-msg"),
+        id="anon-messages", hx_swap_oob="beforeend",
+    ))
+
+    # Clear input
+    await send(Form(
+        Input(id="anon-input", name="msg", placeholder="Ask Patrick anything...", autocomplete="off", autofocus=True),
+        Hidden(name="thread_id", value=thread_id),
+        Button("Send"),
+        cls="mini-chat-input", id="anon-form", ws_send=True, hx_swap_oob="outerHTML",
+    ))
+
+    if count >= _ANON_MSG_LIMIT:
+        # Nudge to create account
+        signup_url = "/register" if not is_clerk_enabled() else "/signin"
+        await send(Div(
+            Div(NotStr(
+                f"I'm really enjoying our conversation! To keep going and save your progress, "
+                f'<a href="{signup_url}" style="color:#09c209;font-weight:600;">create a free Mentastic account</a>. '
+                f"I'll remember everything we discussed."
+            ), cls="mini-chat-msg patrick"),
+            id="anon-messages", hx_swap_oob="beforeend",
+        ))
+        return
+
+    # Stream AI response
+    agent = create_mentastic_agent()
+    lc_messages = [HumanMessage(content=msg)]
+    full_response = ""
+    resp_id = str(_uuid.uuid4())[:8]
+
+    # Create empty response div
+    await send(Div(
+        Div(Span("", id=f"anon-resp-{resp_id}"), cls="mini-chat-msg patrick"),
+        id="anon-messages", hx_swap_oob="beforeend",
+    ))
+
+    try:
+        async for event in agent.astream_events({"messages": lc_messages}, version="v2"):
+            if event.get("event") == "on_chat_model_stream":
+                chunk = event.get("data", {}).get("chunk")
+                if chunk and hasattr(chunk, "content") and chunk.content:
+                    full_response += chunk.content
+                    await send(Span(chunk.content, id=f"anon-resp-{resp_id}", hx_swap_oob="beforeend"))
+    except Exception as e:
+        full_response = f"I had a brief hiccup — try asking again!"
+        await send(Span(full_response, id=f"anon-resp-{resp_id}", hx_swap_oob="beforeend"))
+
+    # After response, render markdown
+    if full_response:
+        import markdown as _md
+        rendered = _md.markdown(full_response, extensions=["tables", "fenced_code", "nl2br"])
+        await send(Div(
+            Div(NotStr(rendered), cls="mini-chat-msg patrick"),
+            Div(
+                Span("", id=f"anon-resp-{resp_id}"),  # remove raw span
+                style="display:none",
+            ),
+            id="anon-messages", hx_swap_oob="beforeend",
+        ))
+
+
+# ---------------------------------------------------------------------------
 # Chat (/chat) — requires auth
 # ---------------------------------------------------------------------------
 
 @rt("/chat")
-def chat_page(session, new: str = "", thread: str = ""):
+def chat_page(request, session, new: str = "", thread: str = ""):
+    # Check Clerk session if enabled
+    if is_clerk_enabled():
+        _check_clerk_session(request, session)
+
     if not session.get("user"):
         return RedirectResponse("/signin", status_code=303)
 
@@ -1180,15 +1317,50 @@ def conv_list(session):
 
 @rt("/signin")
 def signin(session, email: str = "", password: str = "", error: str = ""):
+    if session.get("user"):
+        return RedirectResponse("/chat", status_code=303)
+
+    # If Clerk is enabled, show Clerk sign-in component
+    if is_clerk_enabled():
+        return (
+            Title("Sign In — Mentastic"),
+            Style(LANDING_CSS),
+            Main(
+                Div(
+                    Div(
+                        Span("M", cls="logo-icon"),
+                        Div("Mentastic", cls="logo-text"),
+                        Div("Human Performance & Readiness", cls="logo-tagline"),
+                        cls="auth-logo",
+                    ),
+                    Div(id="clerk-signin", style="min-height:400px;display:flex;justify-content:center;"),
+                    Div("2026 Mentastic. All rights reserved.", cls="auth-footer"),
+                    cls="auth-wrapper",
+                ),
+                Script(f"""
+                    const clerkPubKey = '{CLERK_PUBLISHABLE_KEY}';
+                    async function initClerk() {{
+                        const clerk = new window.Clerk(clerkPubKey);
+                        await clerk.load();
+                        if (clerk.user) {{ window.location.href = '/chat'; return; }}
+                        clerk.mountSignIn(document.getElementById('clerk-signin'), {{
+                            afterSignInUrl: '/chat',
+                            afterSignUpUrl: '/chat',
+                        }});
+                    }}
+                    if (window.Clerk) initClerk();
+                    else document.addEventListener('DOMContentLoaded', initClerk);
+                """),
+            ),
+        )
+
+    # Fallback: email/password auth
     if email and password:
         from utils.auth import authenticate
         user = authenticate(email, password)
         if not user:
             return RedirectResponse("/signin?error=Invalid+email+or+password", status_code=303)
         _session_login(session, user)
-        return RedirectResponse("/chat", status_code=303)
-
-    if session.get("user"):
         return RedirectResponse("/chat", status_code=303)
 
     parts = [H2("Sign In")]
@@ -1208,6 +1380,44 @@ def signin(session, email: str = "", password: str = "", error: str = ""):
 
 @rt("/register")
 def register(session, email: str = "", password: str = "", display_name: str = "", error: str = ""):
+    if session.get("user"):
+        return RedirectResponse("/chat", status_code=303)
+
+    # If Clerk is enabled, show Clerk sign-up component
+    if is_clerk_enabled():
+        return (
+            Title("Create Account — Mentastic"),
+            Style(LANDING_CSS),
+            Main(
+                Div(
+                    Div(
+                        Span("M", cls="logo-icon"),
+                        Div("Mentastic", cls="logo-text"),
+                        Div("Human Performance & Readiness", cls="logo-tagline"),
+                        cls="auth-logo",
+                    ),
+                    Div(id="clerk-signup", style="min-height:400px;display:flex;justify-content:center;"),
+                    Div("2026 Mentastic. All rights reserved.", cls="auth-footer"),
+                    cls="auth-wrapper",
+                ),
+                Script(f"""
+                    const clerkPubKey = '{CLERK_PUBLISHABLE_KEY}';
+                    async function initClerk() {{
+                        const clerk = new window.Clerk(clerkPubKey);
+                        await clerk.load();
+                        if (clerk.user) {{ window.location.href = '/chat'; return; }}
+                        clerk.mountSignUp(document.getElementById('clerk-signup'), {{
+                            afterSignInUrl: '/chat',
+                            afterSignUpUrl: '/chat',
+                        }});
+                    }}
+                    if (window.Clerk) initClerk();
+                    else document.addEventListener('DOMContentLoaded', initClerk);
+                """),
+            ),
+        )
+
+    # Fallback: email/password auth
     if email and password:
         if len(password) < 8:
             return RedirectResponse("/register?error=Password+must+be+at+least+8+characters", status_code=303)
@@ -1219,9 +1429,6 @@ def register(session, email: str = "", password: str = "", display_name: str = "
         if not user:
             return RedirectResponse("/register?error=Unable+to+create+account", status_code=303)
         _session_login(session, user)
-        return RedirectResponse("/chat", status_code=303)
-
-    if session.get("user"):
         return RedirectResponse("/chat", status_code=303)
 
     parts = [H2("Create Account")]
@@ -1243,6 +1450,21 @@ def register(session, email: str = "", password: str = "", display_name: str = "
 @rt("/logout")
 def logout(session):
     session.clear()
+    if is_clerk_enabled():
+        # Clerk handles sign-out on the client side; just clear server session
+        return (
+            Title("Logging out..."),
+            Style(LANDING_CSS),
+            Script(f"""
+                async function clerkLogout() {{
+                    const clerk = new window.Clerk('{CLERK_PUBLISHABLE_KEY}');
+                    await clerk.load();
+                    await clerk.signOut();
+                    window.location.href = '/';
+                }}
+                clerkLogout();
+            """),
+        )
     return RedirectResponse("/", status_code=303)
 
 

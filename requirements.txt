@@ -5,7 +5,7 @@ langchain-core
 sqlalchemy
 psycopg2-binary
 bcrypt
-PyJWT
+PyJWT[crypto]
 python-dotenv
 httpx
 pydantic
