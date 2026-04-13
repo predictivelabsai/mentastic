@@ -319,37 +319,60 @@ graph TB
 
 ## Data Integrations
 
-Mentastic connects to 12 data sources via [arcade.dev](https://arcade.dev) and [composio.dev](https://composio.dev). Each integration has a connection flow: detail page (what data is accessed, privacy info) → confirm → connected state with disconnect option.
+Mentastic connects to 16 data sources via three integration providers:
+
+- **[Thryve Health](https://thryve.health)** — Unified wearable hub providing access to 500+ devices through a single API. Delivers 18 data categories (sleep, HR, HRV, activity, body composition, blood glucose, respiratory, VO2max) plus analytics: sleep quality scoring, fitness age calculation, and mental health risk assessment. Thryve handles device authorization, real-time data sync, and data normalization.
+- **[arcade.dev](https://arcade.dev)** — OAuth-based integrations for Google Fit, Apple Health, Google Calendar, Spotify, Slack.
+- **[composio.dev](https://composio.dev)** — Oura Ring, Garmin, Strava, and other wearable-specific integrations.
 
 ```mermaid
-graph LR
-    subgraph "Ready (6)"
-        GF[Google Fit<br/>🏃 arcade.dev]
-        AH[Apple Health<br/>❤️ arcade.dev]
-        OR[Oura Ring<br/>💍 composio.dev]
-        GA[Garmin<br/>⌚ composio.dev]
-        GC[Google Calendar<br/>📅 arcade.dev]
-        SP[Spotify<br/>🎵 arcade.dev]
+graph TB
+    subgraph "Thryve Health — Unified Hub (500+ devices)"
+        TH_API[Thryve API<br/>18 data categories · Analytics]
+        TH_FIT[Fitbit] --> TH_API
+        TH_WI[Withings] --> TH_API
+        TH_PO[Polar] --> TH_API
+        TH_WH[Whoop] --> TH_API
+        TH_SU[Suunto] --> TH_API
+        TH_SA[Samsung Health] --> TH_API
+        TH_DX[Dexcom CGM] --> TH_API
     end
 
-    subgraph "Coming Soon (4)"
-        ST[Strava<br/>🚴]
-        SL[Slack<br/>💬]
-        FB[Fitbit<br/>📱]
-        WI[Withings<br/>⚖️]
+    subgraph "Direct Integrations"
+        ARC[arcade.dev]
+        COM[composio.dev]
+        GF[Google Fit] --> ARC
+        AH[Apple Health] --> ARC
+        GC[Google Calendar] --> ARC
+        SP_I[Spotify] --> ARC
+        OR[Oura Ring] --> COM
+        GA[Garmin] --> COM
     end
 
-    subgraph "Planned (2)"
-        PO[Polar<br/>🏊]
-        WH[Whoop<br/>🔴]
+    subgraph "Coming Soon"
+        ST[Strava] --> COM
+        SL[Slack] --> ARC
     end
 
-    subgraph "Connection Flow"
-        CARD[Integration Card<br/>Connect →] --> DETAIL[Detail Page<br/>Data + Privacy]
-        DETAIL --> CONFIRM[Confirm<br/>Mock OAuth]
-        CONFIRM --> CONNECTED[✓ Connected<br/>Disconnect option]
+    TH_API --> MENTASTIC[Mentastic<br/>Patrick AI Agent]
+    ARC --> MENTASTIC
+    COM --> MENTASTIC
+
+    subgraph "Thryve Analytics"
+        SQ[Sleep Quality Scoring]
+        FA[Fitness Age / VO2max]
+        MH[Mental Health Risk]
     end
+
+    TH_API --> SQ
+    TH_API --> FA
+    TH_API --> MH
+    SQ --> MENTASTIC
+    FA --> MENTASTIC
+    MH --> MENTASTIC
 ```
+
+Each integration has a connection flow: detail page (what data is accessed, privacy info) → confirm → connected state with disconnect option.
 
 ---
 

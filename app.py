@@ -1021,6 +1021,7 @@ def _right_pane():
 # ---------------------------------------------------------------------------
 
 _INTEGRATIONS = [
+    ("Thryve Health", "500+ wearables via single API", "ready"),
     ("Google Fit", "Fitness & activity", "ready"),
     ("Apple Health", "Sleep & vitals", "ready"),
     ("Oura Ring", "Recovery & readiness", "ready"),
@@ -1028,7 +1029,6 @@ _INTEGRATIONS = [
     ("Google Calendar", "Schedule & load", "ready"),
     ("Spotify", "Mood & listening", "ready"),
     ("Strava", "Exercise patterns", "coming"),
-    ("Slack", "Digital overload", "coming"),
 ]
 
 @rt("/")
@@ -1123,7 +1123,7 @@ def landing(request, session):
                 P("Mentastic integrates with the tools you already use to build a complete picture.", cls="section-sub"),
                 Div(
                     *[Div(
-                        Div({"Google Fit":"🏃","Apple Health":"❤️","Oura Ring":"💍","Garmin":"⌚",
+                        Div({"Thryve Health":"🔬","Google Fit":"🏃","Apple Health":"❤️","Oura Ring":"💍","Garmin":"⌚",
                              "Google Calendar":"📅","Spotify":"🎵","Strava":"🚴","Slack":"💬"}.get(name,"📊"), cls="int-icon"),
                         Div(name, cls="int-name"),
                         Div("Ready" if status == "ready" else "Coming soon", cls="int-status"),
@@ -1484,6 +1484,9 @@ def logout(session):
 # ---------------------------------------------------------------------------
 
 _ALL_INTEGRATIONS = [
+    # Thryve Health — unified wearable hub (500+ devices, 18 data categories)
+    ("Thryve Health", "🔬", "Unified health data hub", "500+ wearables via single API — sleep, HR, HRV, activity, body composition, blood glucose, respiratory, VO2max. Analytics: sleep quality scoring, fitness age, mental health risk assessment.", "ready", "thryve.health"),
+    # Direct integrations via arcade.dev / composio.dev
     ("Google Fit", "🏃", "Fitness & activity tracking", "Steps, calories, workouts, heart rate zones", "ready", "arcade.dev"),
     ("Apple Health", "❤️", "Sleep & vital signs", "Sleep stages, resting HR, HRV, respiratory rate", "ready", "arcade.dev"),
     ("Oura Ring", "💍", "Recovery & readiness", "Sleep score, readiness score, activity, temperature", "ready", "composio.dev"),
@@ -1492,10 +1495,13 @@ _ALL_INTEGRATIONS = [
     ("Spotify", "🎵", "Mood & listening patterns", "Listening habits, genre patterns, wind-down music", "ready", "arcade.dev"),
     ("Strava", "🚴", "Exercise patterns", "Training load, recovery needs, activity trends", "coming", "composio.dev"),
     ("Slack", "💬", "Digital overload signals", "Message volume, after-hours activity, notification patterns", "coming", "arcade.dev"),
-    ("Fitbit", "📱", "Activity & sleep", "Steps, sleep stages, active minutes, heart rate", "coming", "composio.dev"),
-    ("Withings", "⚖️", "Body composition", "Weight trends, body composition, blood pressure", "coming", "composio.dev"),
-    ("Polar", "🏊", "Training & recovery", "Training load, orthostatic test, sleep tracking", "planned", "composio.dev"),
-    ("Whoop", "🔴", "Strain & recovery", "Strain score, recovery score, sleep performance", "planned", "composio.dev"),
+    ("Fitbit", "📱", "Activity & sleep", "Steps, sleep stages, active minutes, heart rate", "ready", "thryve.health"),
+    ("Withings", "⚖️", "Body composition", "Weight trends, body composition, blood pressure", "ready", "thryve.health"),
+    ("Polar", "🏊", "Training & recovery", "Training load, orthostatic test, sleep tracking", "ready", "thryve.health"),
+    ("Whoop", "🔴", "Strain & recovery", "Strain score, recovery score, sleep performance", "ready", "thryve.health"),
+    ("Samsung Health", "📲", "Activity & sleep", "Steps, sleep, heart rate, stress via Health Connect", "ready", "thryve.health"),
+    ("Suunto", "🏔", "Outdoor & endurance", "Training load, recovery, GPS activities", "ready", "thryve.health"),
+    ("Dexcom", "💉", "Blood glucose monitoring", "Continuous glucose, trends, time in range", "ready", "thryve.health"),
 ]
 
 # ---------------------------------------------------------------------------
@@ -1906,7 +1912,8 @@ def integrations(request, session):
                 P("Connect your tools to build a complete picture of your readiness and performance.", cls="section-sub"),
                 P(status_text, style=f"text-align:center;color:{'#09c209' if connected_count else '#64748b'};"
                   f"font-weight:{'600' if connected_count else '400'};font-size:0.9rem;margin-bottom:1rem;"),
-                P("Powered by ", A("arcade.dev", href="https://arcade.dev"), " and ",
+                P("Powered by ", A("Thryve Health", href="https://thryve.health"), " (500+ wearables), ",
+                  A("arcade.dev", href="https://arcade.dev"), ", and ",
                   A("composio.dev", href="https://composio.dev"), " for secure, privacy-aware connections.",
                   style="text-align:center;color:#94a3b8;font-size:0.8rem;margin-bottom:2rem;"),
 
