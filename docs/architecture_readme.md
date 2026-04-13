@@ -2,7 +2,34 @@
 
 Mentastic is built as a single-process server-rendered application using the **AG UI** (Agentic Graphical User Interface) pattern — a design philosophy where the AI agent is not hidden behind an API, but is the interface itself. The user interacts directly with the agent through a streaming conversational UI, while the system makes its reasoning process visible in real time.
 
-This document describes the system architecture, the AG UI concept, the 3-pane design, and the technical flow from user input to agent response.
+This document describes the system architecture, the user journey, the AG UI concept, and the technical flow from landing page to agent response.
+
+---
+
+## User Journey
+
+The platform follows a progressive engagement model: visitors can try Patrick anonymously on the landing page, then create an account to unlock the full experience.
+
+```mermaid
+graph LR
+    subgraph "Anonymous"
+        LAND[Landing Page] --> MINI[Mini-Chat<br/>with Patrick]
+        MINI -->|5 messages| NUDGE[Patrick suggests<br/>creating account]
+    end
+
+    subgraph "Authentication"
+        NUDGE --> CLERK[Clerk Sign-Up<br/>Email / Google / Apple]
+        CLERK --> SYNC[User synced<br/>to PostgreSQL]
+    end
+
+    subgraph "Authenticated Experience"
+        SYNC --> CHAT[Full 3-Pane Chat<br/>6 Tools + History]
+        CHAT --> DASH[Performance<br/>Dashboard]
+        CHAT --> INT[Data<br/>Integrations]
+        DASH --> CHAT
+        INT --> CHAT
+    end
+```
 
 ---
 
@@ -12,26 +39,21 @@ Traditional AI applications treat the model as a backend service: the user fills
 
 In Mentastic, this means:
 
-- **Streaming-first interaction.** Every response from Patrick (the AI companion) is streamed via WebSocket. The user sees tokens appear in real time, not after a loading spinner.
-- **Transparent tool execution.** When Patrick calls a tool (e.g. saving a readiness check-in to the database, or generating a resilience exercise plan), the tool call appears in the Thinking Trace panel — the user can see what the agent decided to do and why.
-- **Conversational agency.** The 6 welcome cards are not static forms — they are conversation starters. Clicking "Readiness Check-In" sends a natural language message to Patrick, who then uses the appropriate tool, asks follow-up questions, and provides personalised insight. The agent decides the flow, not a hardcoded wizard.
-- **No page reloads.** The entire interaction happens over a single WebSocket connection using HTMX out-of-band (OOB) swaps. The chat, trace panel, conversation list, and input state all update simultaneously from a single message stream.
-
-This is fundamentally different from a chatbot with a text box. AG UI makes the agent's reasoning visible and the interaction feel collaborative rather than transactional.
+- **Streaming-first interaction.** Every response from Patrick is streamed via WebSocket. The user sees tokens appear in real time, not after a loading spinner.
+- **Transparent tool execution.** When Patrick calls a tool (e.g. saving a readiness check-in or generating a resilience plan), the tool call appears in the Thinking Trace panel.
+- **Conversational agency.** The 6 welcome cards are conversation starters, not static forms. Clicking "My Readiness Now" sends a natural language message to Patrick, who calls the appropriate tool, analyses the data, and provides personalised insight.
+- **Anonymous-first onboarding.** Visitors try Patrick directly on the landing page — no account required. After 5 messages, Patrick suggests creating an account.
+- **No page reloads.** The entire interaction happens over a single WebSocket connection using HTMX out-of-band (OOB) swaps.
 
 ---
 
 ## 3-Pane Design Principles
 
-The interface is organised into three panes, each serving a distinct purpose in the agent interaction:
+**Left Pane (260px) — Context & Navigation.** Shows auth state, conversation history, and links to Dashboard and Integrations. Provides orientation without competing with the conversation.
 
-**Left Pane (260px) — Context & Navigation.** This is the user's anchor. It shows who they are (auth state), what conversations they've had (history), and what Mentastic is (About section). It provides orientation without competing with the active conversation.
+**Center Pane (flexible) — Conversation.** The streaming dialogue with Patrick. The welcome screen shows 6 cards: 3 for viewing current state (My Readiness Now, Performance Overview, Stress & Load Check) and 3 for improvement actions (Readiness Check-In, Recovery Plan, Resilience Builder).
 
-**Center Pane (flexible) — Conversation.** This is where the work happens. The chat area shows the streaming dialogue with Patrick, including user messages, assistant responses with rendered markdown, and tool execution indicators. The welcome screen with 6 action cards appears for new conversations, providing guided entry points into Patrick's capabilities.
-
-**Right Pane (380px, toggled) — Thinking Trace.** This is what makes AG UI different from a standard chatbot. The trace panel shows the agent's internal activity: when a tool is called, what it's doing, and when it completes. This transparency builds trust — the user understands why Patrick recommended a specific recovery plan or how it analysed their stress patterns. The trace panel opens automatically during AI runs and can be toggled on demand.
-
-On mobile (< 768px), the layout collapses to a single center pane, keeping the conversation front and center.
+**Right Pane (380px, toggled) — Thinking Trace.** Shows the agent's internal activity: tool calls, execution status, and completion. Opens automatically during AI runs.
 
 ```mermaid
 graph TB
@@ -41,14 +63,14 @@ graph TB
             BRAND[Mentastic + PATRICK badge]
             NEWCHAT[+ New Chat]
             CONVLIST[Conversation History]
-            ABOUT[About Mentastic]
-            AUTH[Login / Register<br/>or User Info + Logout]
+            LINKS[Dashboard + Integrations]
+            AUTH[User Info + Logout]
         end
 
         subgraph "Center Pane (1fr)"
             HEADER[Patrick + Trace button]
             subgraph "Chat Container (hx-ext=ws)"
-                WELCOME[Welcome Screen<br/>6 Action Cards]
+                WELCOME[Welcome Screen<br/>3 State + 3 Action Cards]
                 MESSAGES[Chat Messages<br/>User + Assistant bubbles]
                 INPUT[Input Form<br/>ws-send]
             end
@@ -68,9 +90,9 @@ graph TB
 
 ## System Overview
 
-The system is a single Python process running FastHTML (a Starlette-based framework for server-rendered HTMX applications). There is no separate frontend build, no API gateway, and no message queue. The browser connects via HTTP for the initial page load and then upgrades to a WebSocket for the chat session.
+The system is a single Python process running FastHTML. There is no separate frontend build, no API gateway, and no message queue. The browser connects via HTTP for the initial page load and then upgrades to a WebSocket for the chat session.
 
-The LangGraph agent runs in-process, streaming events directly to the WebSocket handler. PostgreSQL stores user accounts, conversation history, and readiness check-in data. The LLM (XAI Grok) is accessed via an OpenAI-compatible API.
+The LangGraph agent runs in-process, streaming events directly to the WebSocket handler. PostgreSQL stores user accounts, conversation history, and readiness check-in data. The LLM (XAI Grok) is accessed via an OpenAI-compatible API. Authentication is handled by Clerk (email, Google, Apple) with a fallback to email/password.
 
 ```mermaid
 graph TB
@@ -78,6 +100,7 @@ graph TB
         UI[3-Pane FastHTML UI]
         WS[WebSocket Connection]
         HTMX[HTMX + marked.js]
+        CLERK_JS[Clerk JS SDK]
     end
 
     subgraph "FastHTML Server (port 5010)"
@@ -85,12 +108,18 @@ graph TB
         AGUI[AGUISetup]
         THREAD[AGUIThread]
         UIC[UI Renderer]
+        ANON[Anonymous WS Handler]
     end
 
     subgraph "LangGraph Agent"
         AGENT[ReAct Agent]
         LLM[XAI Grok LLM]
         TOOLS[6 Tools]
+    end
+
+    subgraph "External Services"
+        CLERK_API[Clerk API<br/>Auth + JWKS]
+        ARCADE[arcade.dev<br/>composio.dev]
     end
 
     subgraph "PostgreSQL (mentastic schema)"
@@ -101,18 +130,23 @@ graph TB
         SUMMARIES[(session_summaries)]
     end
 
-    UI -->|HTTP GET /| APP
-    UI -->|WS /agui/ws/thread_id| WS
+    UI -->|HTTP GET| APP
+    UI -->|WS /agui/ws/| WS
+    UI -->|WS /anon-ws/| ANON
+    CLERK_JS -->|JWT| CLERK_API
     WS --> AGUI
     AGUI --> THREAD
     THREAD --> UIC
     THREAD -->|astream_events v2| AGENT
+    ANON -->|astream_events v2| AGENT
     AGENT --> LLM
     AGENT --> TOOLS
-    TOOLS -->|DB-backed tools| CHECKINS
-    THREAD -->|save messages| MSGS
-    THREAD -->|save conversations| CONV
-    APP -->|auth| USERS
+    TOOLS -->|DB-backed| CHECKINS
+    THREAD -->|save| MSGS
+    THREAD -->|save| CONV
+    APP -->|verify JWT| CLERK_API
+    APP -->|sync user| USERS
+    APP -.->|future| ARCADE
     LLM -->|streaming tokens| THREAD
     THREAD -->|OOB swap HTML| WS
 ```
@@ -121,16 +155,16 @@ graph TB
 
 ## WebSocket Streaming Flow
 
-When a user sends a message, the following sequence occurs — all within a single WebSocket connection, with no page reloads or HTTP round-trips:
+When a user sends a message, the following sequence occurs — all within a single WebSocket connection:
 
 1. The user's message is immediately rendered as a chat bubble (optimistic UI).
 2. An empty assistant bubble is created with a streaming cursor.
-3. The LangGraph agent begins processing, and its events are streamed back.
-4. Each token from the LLM is appended to the assistant bubble in real time via HTMX OOB swap.
-5. If the agent calls a tool, the tool execution appears in both the chat (as a status indicator) and the Thinking Trace panel.
-6. When streaming completes, the raw text is replaced with server-side rendered markdown (bold, lists, headings), the input is re-enabled, and the conversation list is refreshed.
+3. The LangGraph agent begins processing, and events are streamed back.
+4. Each token is appended to the assistant bubble in real time via HTMX OOB swap.
+5. If the agent calls a tool, it appears in both the chat and the Thinking Trace panel.
+6. When complete, raw text is replaced with server-side rendered markdown.
 
-The entire flow takes approximately 0.5 seconds to first token and 2-3 seconds for a complete response.
+Time to first token: ~0.5 seconds. Full response: ~2-3 seconds.
 
 ```mermaid
 sequenceDiagram
@@ -147,7 +181,7 @@ sequenceDiagram
     T->>T: Set guard flag (prevent double-submit)
     T->>B: User bubble (OOB beforeend)
     T->>B: Empty assistant bubble (OOB beforeend)
-    T->>B: Trace: "Patrick is thinking..." (OOB beforeend)
+    T->>B: Trace: "Patrick is thinking..."
     T->>DB: save_message(user msg)
 
     T->>A: astream_events(messages, v2)
@@ -156,20 +190,18 @@ sequenceDiagram
         A->>L: Chat completion (streaming)
         L-->>A: Token chunk
         A-->>T: on_chat_model_stream event
-        T->>B: Span token (OOB beforeend to content_id)
+        T->>B: Span token (OOB beforeend)
     end
 
     opt Tool Call
         A-->>T: on_tool_start event
-        T->>B: Tool indicator in chat (OOB)
-        T->>B: Tool trace entry (OOB)
+        T->>B: Tool indicator in chat + trace
         A->>A: Execute tool
         A-->>T: on_tool_end event
-        T->>B: Update tool status (OOB outerHTML)
+        T->>B: Update tool status (OOB)
     end
 
     T->>B: Server-rendered markdown (OOB outerHTML)
-    T->>B: Trace: "Response complete"
     T->>DB: save_message(assistant response)
     T->>B: Re-enable input, refresh conversation list
 ```
@@ -178,13 +210,13 @@ sequenceDiagram
 
 ## Agent Architecture
 
-Patrick is built using LangGraph's `create_react_agent` — a ReAct (Reasoning + Acting) agent that can decide when to call tools and when to respond directly. The agent has access to 6 tools, split into two categories:
+Patrick uses LangGraph's `create_react_agent` — a ReAct (Reasoning + Acting) agent. The 6 tools are split into two categories:
 
-**DB-backed tools** persist data and query historical patterns. When a user does a readiness check-in, the values are saved to PostgreSQL and available for future trend analysis. The readiness report tool aggregates check-ins over configurable time windows and detects upward stress trends or declining energy.
+**DB-backed tools** persist data and query patterns. The readiness check-in saves energy/focus/stress/mood (1-10) to PostgreSQL. The readiness report aggregates check-ins and detects trends.
 
-**Conversational tools** return structured frameworks that Patrick uses to guide the conversation. These don't touch the database — they provide evidence-based content (recovery techniques, resilience exercises, stress assessment frameworks) that Patrick weaves into a personalised dialogue. This means the same tool can produce very different conversations depending on the user's context.
+**Conversational tools** return structured frameworks that Patrick weaves into personalised dialogue. The same recovery plan tool produces different conversations depending on the user's context.
 
-The LLM model is configurable via the `MODEL_NAME` environment variable, defaulting to `grok-4-fast-reasoning`. The agent is created per-conversation thread and cached, so each thread maintains its own tool state and user context.
+The LLM model is configurable via `MODEL_NAME` (default: `grok-4-fast-reasoning`). The agent is created per-thread and cached.
 
 ```mermaid
 graph LR
@@ -227,11 +259,103 @@ graph LR
 
 ---
 
+## Authentication Flow
+
+Mentastic supports two auth modes: **Clerk** (email, Google, Apple) and **fallback** (email/password). When Clerk is configured, the sign-in/sign-up pages mount Clerk's prebuilt UI components. The backend verifies Clerk JWTs via their JWKS endpoint and syncs user data to the local PostgreSQL database.
+
+```mermaid
+sequenceDiagram
+    participant U as User
+    participant B as Browser
+    participant CK as Clerk JS
+    participant API as Clerk API
+    participant S as FastHTML Server
+    participant DB as PostgreSQL
+
+    U->>B: Click "Get Started"
+    B->>CK: Mount SignUp component
+    U->>CK: Enter email / click Google / Apple
+    CK->>API: Authenticate
+    API-->>CK: Session JWT (__session cookie)
+    CK->>B: Redirect to /chat
+    B->>S: GET /chat (with __session cookie)
+    S->>API: Verify JWT via JWKS
+    API-->>S: Valid (user_id, email)
+    S->>DB: Upsert user in mentastic.users
+    S-->>B: Render 3-pane chat
+```
+
+---
+
+## Dashboard
+
+The performance dashboard shows mock data styled like Apple/Google fitness apps. In production, this data comes from readiness check-ins and connected integrations. Charts are rendered as inline SVG — no JavaScript chart libraries.
+
+```mermaid
+graph TB
+    subgraph "Dashboard Layout"
+        direction TB
+        KPI[4 KPI Cards<br/>Readiness · Energy · Stress · Sleep]
+        subgraph "Charts Row 1"
+            BAR1[Readiness Bar Chart<br/>Green/Yellow coded]
+            BAR2[Energy vs Stress<br/>Comparison bars]
+        end
+        subgraph "Charts Row 2"
+            RING[Time Distribution<br/>Donut chart]
+            BAR3[Sleep & Activity<br/>Bars + step counts]
+        end
+        INSIGHTS[Patrick's Insights<br/>Personalised analysis]
+    end
+
+    KPI --> BAR1
+    KPI --> BAR2
+    BAR1 --> RING
+    BAR2 --> BAR3
+    RING --> INSIGHTS
+    BAR3 --> INSIGHTS
+```
+
+---
+
+## Data Integrations
+
+Mentastic connects to 12 data sources via [arcade.dev](https://arcade.dev) and [composio.dev](https://composio.dev). Each integration has a connection flow: detail page (what data is accessed, privacy info) → confirm → connected state with disconnect option.
+
+```mermaid
+graph LR
+    subgraph "Ready (6)"
+        GF[Google Fit<br/>🏃 arcade.dev]
+        AH[Apple Health<br/>❤️ arcade.dev]
+        OR[Oura Ring<br/>💍 composio.dev]
+        GA[Garmin<br/>⌚ composio.dev]
+        GC[Google Calendar<br/>📅 arcade.dev]
+        SP[Spotify<br/>🎵 arcade.dev]
+    end
+
+    subgraph "Coming Soon (4)"
+        ST[Strava<br/>🚴]
+        SL[Slack<br/>💬]
+        FB[Fitbit<br/>📱]
+        WI[Withings<br/>⚖️]
+    end
+
+    subgraph "Planned (2)"
+        PO[Polar<br/>🏊]
+        WH[Whoop<br/>🔴]
+    end
+
+    subgraph "Connection Flow"
+        CARD[Integration Card<br/>Connect →] --> DETAIL[Detail Page<br/>Data + Privacy]
+        DETAIL --> CONFIRM[Confirm<br/>Mock OAuth]
+        CONFIRM --> CONNECTED[✓ Connected<br/>Disconnect option]
+    end
+```
+
+---
+
 ## Database Schema
 
-The database uses a dedicated `mentastic` schema with 5 tables. The design prioritises simplicity — no ORM models, just raw SQL via SQLAlchemy's `text()` function with named parameters. This makes the data layer easy to understand and debug.
-
-The `readiness_checkins` table is the core data model for the DB-backed tools. Each check-in captures a snapshot of the user's state across four dimensions (energy, focus, stress, mood) on a 1-10 scale, with optional free-text notes. The readiness report tool queries this table to identify trends and generate personalised insights.
+5 tables in the `mentastic` schema. No ORM models — all queries use raw SQL via SQLAlchemy's `text()`.
 
 ```mermaid
 erDiagram
@@ -294,14 +418,6 @@ erDiagram
 
 ## Class Hierarchy
 
-The application code in `app.py` is structured around three classes that form the AG UI engine:
-
-**AGUISetup** is the entry point. It wires WebSocket routes into the FastHTML app and maintains an in-memory registry of conversation threads. When a WebSocket connects, AGUISetup creates or retrieves the appropriate AGUIThread.
-
-**AGUIThread** is the heart of the system. Each thread represents one conversation with one user. It holds the message history, manages WebSocket subscribers (supporting multiple browser tabs on the same conversation), and orchestrates the LangGraph agent. The `_handle_ai_run()` method is where streaming happens — it calls `agent.astream_events()` and translates each event into an OOB swap sent to all connected browsers.
-
-**UI** is a stateless renderer. It produces the FastHTML components (welcome screen, message bubbles, input form) that AGUIThread sends to the browser. Separating rendering from state management keeps the code clean and testable.
-
 ```mermaid
 classDiagram
     class AGUISetup {
@@ -346,9 +462,7 @@ classDiagram
 
 ## Deployment
 
-Mentastic is deployed as a single Docker container on Coolify at `mentastic.predictivelabs.ai`. The container runs `app.py` directly using FastHTML's built-in `serve()` function (which wraps Uvicorn). PostgreSQL and the XAI API are external services accessed via environment variables.
-
-The architecture is intentionally simple — one process, one container, no orchestration. This makes it easy to deploy, debug, and iterate. The WebSocket connection requires that the reverse proxy (Coolify/Caddy) supports WebSocket upgrades, which is configured automatically.
+Single Docker container on Coolify at `mentastic.predictivelabs.ai`. PostgreSQL, XAI API, and Clerk are external services.
 
 ```mermaid
 graph LR
@@ -360,12 +474,16 @@ graph LR
     subgraph "External"
         PG[(PostgreSQL<br/>mentastic schema)]
         XAI[XAI API<br/>api.x.ai/v1]
+        CK[Clerk API<br/>Auth + JWKS]
+        ARC[arcade.dev<br/>composio.dev]
     end
 
     DOCKER --> APP
     APP -->|DB_URL| PG
     APP -->|XAI_API_KEY| XAI
-    
+    APP -->|CLERK keys| CK
+    APP -.->|future| ARC
+
     USER[Browser] -->|HTTPS| DOCKER
     USER -->|WSS| DOCKER
 ```
@@ -374,9 +492,7 @@ graph LR
 
 ## Resilience Builder: Tool Detail
 
-The resilience builder is the most content-rich conversational tool. It contains 30 evidence-based exercises organised across 6 focus areas. When invoked, Patrick selects the appropriate set based on the user's request, presents them conversationally, and helps the user pick 1-2 to try that week.
-
-This illustrates the AG UI philosophy: the tool provides the knowledge, but the agent provides the interaction. The same exercise set will be presented differently to a stressed executive versus a fatigued military operator, because Patrick adapts tone, emphasis, and follow-up questions to the individual.
+30 evidence-based exercises across 6 focus areas. Patrick selects the appropriate set based on the user's request and adapts presentation to the individual.
 
 ```mermaid
 mindmap
