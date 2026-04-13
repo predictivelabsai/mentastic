@@ -1,15 +1,12 @@
 """
 Capture User Guide Screenshots
 
-Launches a headless browser, registers/logs in, navigates key screens,
-and saves screenshots to screenshots/.
+Launches a headless browser, navigates the full Mentastic flow:
+landing → register → chat → integrations → about → mobile.
 
 Usage:
     # App must be running: python app.py
     python tests/capture_guide.py
-
-    # Or start app automatically:
-    python tests/capture_guide.py --start-app
 """
 
 import asyncio
@@ -26,36 +23,30 @@ PASSWORD = "demo1234"
 
 
 async def wait_for_ws(page, timeout=10):
-    """Wait for the chat form to load AND the WebSocket to connect."""
+    """Wait for chat WebSocket form to load."""
     for _ in range(timeout * 4):
         ready = await page.evaluate("""
             () => {
                 var ta = document.getElementById('chat-input');
-                var fm = document.getElementById('chat-form');
-                // Check HTMX ws extension has connected
-                var ws = fm && fm['htmx-internal-data'] && fm['htmx-internal-data'].webSocket;
                 var wsExt = document.querySelector('[ws-send]');
-                return !!(ta && fm && wsExt);
+                return !!(ta && wsExt);
             }
         """)
         if ready:
-            await asyncio.sleep(2)  # extra settle for WS handshake
+            await asyncio.sleep(2)
             return True
         await asyncio.sleep(0.25)
     return False
 
 
 async def send_and_wait(page, msg, wait=20):
-    """Send a message via JS requestSubmit (matching card onclick pattern)."""
+    """Send a message via JS requestSubmit."""
     await wait_for_ws(page)
     await page.evaluate(f"""
         () => {{
             var ta = document.getElementById('chat-input');
             var fm = document.getElementById('chat-form');
-            if (ta && fm) {{
-                ta.value = {repr(msg)};
-                fm.requestSubmit();
-            }}
+            if (ta && fm) {{ ta.value = {repr(msg)}; fm.requestSubmit(); }}
         }}
     """)
     await asyncio.sleep(wait)
@@ -72,96 +63,107 @@ async def run():
         browser = await p.chromium.launch(headless=True)
         page = await browser.new_page(viewport={"width": 1440, "height": 900})
 
-        # --- 01: Landing page (not logged in) ---
+        # --- 01: Landing page ---
         await page.goto(BASE_URL)
-        await asyncio.sleep(3)
-        await page.screenshot(path=str(SCREENSHOTS_DIR / "01_landing.png"))
-        print("  captured  01_landing.png — Landing page")
+        await asyncio.sleep(2)
+        await page.screenshot(path=str(SCREENSHOTS_DIR / "01_landing_hero.png"))
+        print("  captured  01_landing_hero.png")
 
-        # --- 02: Register form ---
-        await page.click('text=Sign up')
+        # --- 02: Landing scroll (features) ---
+        await page.evaluate("window.scrollTo(0, 900)")
         await asyncio.sleep(1)
-        await page.screenshot(path=str(SCREENSHOTS_DIR / "02_register_form.png"))
-        print("  captured  02_register_form.png — Register form")
+        await page.screenshot(path=str(SCREENSHOTS_DIR / "02_landing_features.png"))
+        print("  captured  02_landing_features.png")
+
+        # --- 03: Landing scroll (integrations + sectors) ---
+        await page.evaluate("window.scrollTo(0, 2200)")
+        await asyncio.sleep(1)
+        await page.screenshot(path=str(SCREENSHOTS_DIR / "03_landing_integrations.png"))
+        print("  captured  03_landing_integrations.png")
+
+        # --- 04: Register page ---
+        await page.goto(f"{BASE_URL}/register")
+        await asyncio.sleep(1)
+        await page.screenshot(path=str(SCREENSHOTS_DIR / "04_register.png"))
+        print("  captured  04_register.png")
 
         # --- Register the demo user ---
         await page.fill('input[name="email"]', EMAIL)
         await page.fill('input[name="password"]', PASSWORD)
         await page.fill('input[name="display_name"]', "Demo User")
-        await page.click('button:has-text("Create Account")')
+        await page.click('button[type="submit"]')
         await asyncio.sleep(3)
 
-        # Reload to get fresh page after registration
-        await page.goto(f"{BASE_URL}/?new=1")
+        # --- 05: Chat welcome ---
+        await page.goto(f"{BASE_URL}/chat?new=1")
         await asyncio.sleep(3)
         await wait_for_ws(page)
+        await page.screenshot(path=str(SCREENSHOTS_DIR / "05_chat_welcome.png"))
+        print("  captured  05_chat_welcome.png")
 
-        # --- 03: Welcome screen with 6 cards ---
-        await page.screenshot(path=str(SCREENSHOTS_DIR / "03_welcome_cards.png"))
-        print("  captured  03_welcome_cards.png — Welcome screen with 6 cards")
-
-        # --- 04: Readiness Check-In ---
+        # --- 06: Readiness Check-In ---
         await send_and_wait(page, "I'd like to do a readiness check-in", 15)
-        await page.screenshot(path=str(SCREENSHOTS_DIR / "04_readiness_checkin.png"))
-        print("  captured  04_readiness_checkin.png — Readiness Check-In chat")
+        await page.screenshot(path=str(SCREENSHOTS_DIR / "06_readiness_checkin.png"))
+        print("  captured  06_readiness_checkin.png")
 
-        # --- 05: Performance Scan ---
-        await page.goto(f"{BASE_URL}/?new=1")
+        # --- 07: Performance Scan ---
+        await page.goto(f"{BASE_URL}/chat?new=1")
         await asyncio.sleep(3)
         await send_and_wait(page, "Let's do a performance scan", 15)
-        await page.screenshot(path=str(SCREENSHOTS_DIR / "05_performance_scan.png"))
-        print("  captured  05_performance_scan.png — Performance Scan chat")
-
-        # --- 06: Recovery Plan ---
-        await page.goto(f"{BASE_URL}/?new=1")
-        await asyncio.sleep(3)
-        await send_and_wait(page, "Help me create a recovery plan", 15)
-        await page.screenshot(path=str(SCREENSHOTS_DIR / "06_recovery_plan.png"))
-        print("  captured  06_recovery_plan.png — Recovery Plan chat")
-
-        # --- 07: Stress & Load ---
-        await page.goto(f"{BASE_URL}/?new=1")
-        await asyncio.sleep(3)
-        await send_and_wait(page, "Analyze my stress and load levels", 15)
-        await page.screenshot(path=str(SCREENSHOTS_DIR / "07_stress_load.png"))
-        print("  captured  07_stress_load.png — Stress & Load chat")
+        await page.screenshot(path=str(SCREENSHOTS_DIR / "07_performance_scan.png"))
+        print("  captured  07_performance_scan.png")
 
         # --- 08: Resilience Builder ---
-        await page.goto(f"{BASE_URL}/?new=1")
+        await page.goto(f"{BASE_URL}/chat?new=1")
         await asyncio.sleep(3)
-        await send_and_wait(page, "I want to work on resilience building", 15)
+        await send_and_wait(page, "I want to work on resilience building for stress", 15)
         await page.screenshot(path=str(SCREENSHOTS_DIR / "08_resilience_builder.png"))
-        print("  captured  08_resilience_builder.png — Resilience Builder chat")
+        print("  captured  08_resilience_builder.png")
 
-        # --- 09: Trace panel visible ---
-        # The trace panel should be open from the last chat
-        await page.screenshot(path=str(SCREENSHOTS_DIR / "09_trace_panel.png"))
-        print("  captured  09_trace_panel.png — Trace panel with tool calls")
-
-        # --- 10: Conversation history in sidebar ---
-        await page.goto(BASE_URL)
+        # --- 09: Conversation history ---
+        await page.goto(f"{BASE_URL}/chat")
         await asyncio.sleep(2)
-        await page.screenshot(path=str(SCREENSHOTS_DIR / "10_conversation_history.png"))
-        print("  captured  10_conversation_history.png — Conversation history")
+        await page.screenshot(path=str(SCREENSHOTS_DIR / "09_conversation_history.png"))
+        print("  captured  09_conversation_history.png")
+
+        # --- 10: Integrations page ---
+        await page.goto(f"{BASE_URL}/integrations")
+        await asyncio.sleep(2)
+        await page.screenshot(path=str(SCREENSHOTS_DIR / "10_integrations.png"))
+        print("  captured  10_integrations.png")
 
         # --- 11: About page ---
         await page.goto(f"{BASE_URL}/about")
         await asyncio.sleep(1)
-        await page.screenshot(path=str(SCREENSHOTS_DIR / "11_about_page.png"))
-        print("  captured  11_about_page.png — About page")
+        await page.screenshot(path=str(SCREENSHOTS_DIR / "11_about.png"))
+        print("  captured  11_about.png")
 
-        # --- 12: About page scrolled ---
-        await page.evaluate("window.scrollTo(0, 600)")
-        await asyncio.sleep(0.5)
-        await page.screenshot(path=str(SCREENSHOTS_DIR / "12_about_page_scroll.png"))
-        print("  captured  12_about_page_scroll.png — About page (scrolled)")
+        # --- 12: Sign In page ---
+        await page.goto(f"{BASE_URL}/logout")
+        await asyncio.sleep(1)
+        await page.goto(f"{BASE_URL}/signin")
+        await asyncio.sleep(1)
+        await page.screenshot(path=str(SCREENSHOTS_DIR / "12_signin.png"))
+        print("  captured  12_signin.png")
 
-        # --- 13: Mobile responsive view ---
+        # --- 13: Mobile landing ---
         await page.set_viewport_size({"width": 390, "height": 844})
-        await page.goto(f"{BASE_URL}/?new=1")
+        await page.goto(BASE_URL)
         await asyncio.sleep(2)
-        await page.screenshot(path=str(SCREENSHOTS_DIR / "13_mobile_view.png"))
-        print("  captured  13_mobile_view.png — Mobile responsive view")
+        await page.screenshot(path=str(SCREENSHOTS_DIR / "13_mobile_landing.png"))
+        print("  captured  13_mobile_landing.png")
+
+        # --- 14: Mobile chat ---
+        await page.goto(f"{BASE_URL}/signin")
+        await asyncio.sleep(1)
+        await page.fill('input[name="email"]', EMAIL)
+        await page.fill('input[name="password"]', PASSWORD)
+        await page.click('button[type="submit"]')
+        await asyncio.sleep(2)
+        await page.goto(f"{BASE_URL}/chat?new=1")
+        await asyncio.sleep(3)
+        await page.screenshot(path=str(SCREENSHOTS_DIR / "14_mobile_chat.png"))
+        print("  captured  14_mobile_chat.png")
 
         await browser.close()
 

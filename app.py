@@ -748,6 +748,117 @@ def manifest():
 
 
 # ---------------------------------------------------------------------------
+# Landing Page CSS (mentastic.me style — dark teal + green accents)
+# ---------------------------------------------------------------------------
+
+LANDING_CSS = """
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; color: #1e293b; }
+
+/* Nav */
+.landing-nav { position: fixed; top: 0; left: 0; right: 0; z-index: 100; background: #093c32; padding: 0.75rem 2rem; display: flex; align-items: center; justify-content: space-between; }
+.landing-nav .nav-brand { color: #dafef5; font-size: 1.3rem; font-weight: 700; text-decoration: none; letter-spacing: -0.01em; }
+.landing-nav .nav-links { display: flex; gap: 1.5rem; align-items: center; }
+.landing-nav .nav-links a { color: #dafef5; text-decoration: none; font-size: 0.85rem; opacity: 0.85; transition: opacity 0.2s; }
+.landing-nav .nav-links a:hover { opacity: 1; }
+.nav-cta { background: #09c209 !important; color: #fff !important; padding: 0.4rem 1rem; border-radius: 6px; font-weight: 600; opacity: 1 !important; }
+
+/* Hero */
+.hero { background: linear-gradient(135deg, #093c32 0%, #0d5c47 50%, #0a4a3a 100%); color: #dafef5; padding: 8rem 2rem 5rem; text-align: center; min-height: 80vh; display: flex; flex-direction: column; justify-content: center; align-items: center; }
+.hero h1 { font-size: 3rem; font-weight: 800; margin-bottom: 1rem; line-height: 1.15; max-width: 800px; }
+.hero h1 span { color: #09c209; }
+.hero .subtitle { font-size: 1.15rem; opacity: 0.9; max-width: 650px; margin: 0 auto 2.5rem; line-height: 1.6; }
+.hero-buttons { display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap; }
+.btn-primary { background: #09c209; color: #fff; padding: 0.75rem 2rem; border-radius: 8px; font-size: 1rem; font-weight: 600; text-decoration: none; border: none; cursor: pointer; transition: background 0.2s; }
+.btn-primary:hover { background: #07a507; }
+.btn-secondary { background: transparent; color: #dafef5; padding: 0.75rem 2rem; border-radius: 8px; font-size: 1rem; font-weight: 600; text-decoration: none; border: 2px solid rgba(218,254,245,0.3); transition: all 0.2s; }
+.btn-secondary:hover { border-color: #dafef5; background: rgba(218,254,245,0.1); }
+
+/* Mini-chat preview */
+.mini-chat { max-width: 500px; margin: 3rem auto 0; background: rgba(255,255,255,0.08); border-radius: 16px; padding: 1.5rem; backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.12); }
+.mini-chat-header { font-size: 0.8rem; color: rgba(218,254,245,0.6); margin-bottom: 0.75rem; text-align: left; }
+.mini-chat-msg { background: rgba(255,255,255,0.1); border-radius: 12px; padding: 0.75rem 1rem; margin-bottom: 0.5rem; font-size: 0.9rem; text-align: left; }
+.mini-chat-msg.patrick { border-left: 3px solid #09c209; }
+.mini-chat-input { display: flex; gap: 0.5rem; margin-top: 0.75rem; }
+.mini-chat-input input { flex: 1; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.15); border-radius: 8px; padding: 0.6rem 0.75rem; color: #dafef5; font-size: 0.85rem; }
+.mini-chat-input input::placeholder { color: rgba(218,254,245,0.4); }
+.mini-chat-input button { background: #09c209; color: #fff; border: none; border-radius: 8px; padding: 0.6rem 1rem; font-weight: 600; cursor: pointer; }
+
+/* Sections */
+.section { padding: 5rem 2rem; max-width: 1100px; margin: 0 auto; }
+.section-dark { background: #f8fafc; }
+.section h2 { font-size: 2rem; font-weight: 700; color: #093c32; margin-bottom: 0.75rem; text-align: center; }
+.section .section-sub { text-align: center; color: #64748b; font-size: 1.05rem; max-width: 600px; margin: 0 auto 3rem; }
+
+/* How it works */
+.steps-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 2rem; }
+.step { text-align: center; padding: 1.5rem; }
+.step-num { width: 48px; height: 48px; background: linear-gradient(135deg, #093c32, #0d5c47); color: #09c209; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; font-weight: 700; margin: 0 auto 1rem; }
+.step h3 { font-size: 1rem; color: #093c32; margin-bottom: 0.5rem; }
+.step p { font-size: 0.85rem; color: #64748b; line-height: 1.5; }
+
+/* Features grid */
+.features-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem; }
+.feature-card { background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 1.5rem; transition: all 0.2s; }
+.feature-card:hover { border-color: #09c209; transform: translateY(-2px); box-shadow: 0 8px 24px rgba(9,60,50,0.08); }
+.feature-icon { width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center; margin-bottom: 0.75rem; font-size: 1.2rem; }
+.feature-card h3 { font-size: 0.95rem; color: #093c32; margin-bottom: 0.4rem; }
+.feature-card p { font-size: 0.8rem; color: #64748b; line-height: 1.5; }
+
+/* Integrations preview */
+.integrations-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; }
+.integration-card { background: #fff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 1rem; text-align: center; transition: all 0.2s; cursor: default; }
+.integration-card:hover { border-color: #09c209; }
+.integration-card .int-icon { font-size: 1.5rem; margin-bottom: 0.5rem; }
+.integration-card .int-name { font-size: 0.8rem; font-weight: 600; color: #093c32; }
+.integration-card .int-status { font-size: 0.7rem; color: #09c209; margin-top: 0.25rem; }
+
+/* Sectors */
+.sectors-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem; }
+.sector-card { background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 2rem 1.5rem; text-align: center; }
+.sector-card h3 { font-size: 1rem; color: #093c32; margin-bottom: 0.5rem; }
+.sector-card p { font-size: 0.8rem; color: #64748b; line-height: 1.5; }
+
+/* CTA bottom */
+.cta-section { background: linear-gradient(135deg, #093c32, #0d5c47); color: #dafef5; padding: 4rem 2rem; text-align: center; }
+.cta-section h2 { color: #dafef5; font-size: 2rem; margin-bottom: 0.75rem; }
+.cta-section p { opacity: 0.85; margin-bottom: 2rem; font-size: 1.05rem; }
+
+/* Footer */
+.landing-footer { background: #062a23; color: rgba(218,254,245,0.6); padding: 2rem; text-align: center; font-size: 0.8rem; }
+.landing-footer a { color: #09c209; text-decoration: none; }
+
+/* Auth pages */
+.auth-wrapper { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; padding: 1rem; background: #f8fafc; }
+.auth-logo { text-align: center; margin-bottom: 1.5rem; }
+.auth-logo .logo-icon { width: 56px; height: 56px; background: linear-gradient(135deg, #093c32, #0d5c47); border-radius: 14px; display: inline-flex; align-items: center; justify-content: center; color: #09c209; font-weight: 800; font-size: 1.4rem; }
+.auth-logo .logo-text { font-size: 1.6rem; font-weight: 700; color: #093c32; margin-top: 0.4rem; }
+.auth-logo .logo-tagline { font-size: 0.8rem; color: #64748b; }
+.auth-card { width: 100%; max-width: 420px; background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 2rem; box-shadow: 0 4px 24px rgba(0,0,0,0.06); }
+.auth-card h2 { text-align: center; margin-bottom: 1.5rem; font-size: 1.3rem; color: #093c32; }
+.auth-card form { display: flex; flex-direction: column; gap: 0.75rem; }
+.auth-card input { width: 100%; padding: 0.6rem 0.75rem; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 0.9rem; font-family: inherit; }
+.auth-card input:focus { outline: none; border-color: #09c209; box-shadow: 0 0 0 2px rgba(9,194,9,0.15); }
+.auth-card button[type=submit] { width: 100%; padding: 0.65rem; background: #09c209; color: #fff; border: none; border-radius: 8px; font-weight: 600; font-size: 0.9rem; cursor: pointer; font-family: inherit; }
+.auth-card button[type=submit]:hover { background: #07a507; }
+.auth-card .alt-link { text-align: center; margin-top: 1rem; font-size: 0.85rem; color: #64748b; }
+.auth-card .alt-link a { color: #09c209; text-decoration: none; }
+.auth-card .error-msg { color: #dc2626; font-size: 0.85rem; text-align: center; background: #fef2f2; padding: 0.5rem; border-radius: 6px; margin-bottom: 0.5rem; }
+.auth-card .success-msg { color: #16a34a; font-size: 0.85rem; text-align: center; background: #f0fdf4; padding: 0.5rem; border-radius: 6px; margin-bottom: 0.5rem; }
+.auth-footer { text-align: center; margin-top: 2rem; font-size: 0.75rem; color: #94a3b8; }
+
+/* Responsive */
+@media (max-width: 768px) {
+  .hero h1 { font-size: 2rem; }
+  .steps-grid { grid-template-columns: repeat(2, 1fr); }
+  .features-grid { grid-template-columns: 1fr; }
+  .integrations-grid { grid-template-columns: repeat(2, 1fr); }
+  .sectors-grid { grid-template-columns: 1fr; }
+  .landing-nav .nav-links a:not(.nav-cta) { display: none; }
+}
+"""
+
+# ---------------------------------------------------------------------------
 # Session helpers
 # ---------------------------------------------------------------------------
 
@@ -762,47 +873,54 @@ def _session_login(session, user: Dict):
     }
 
 
+def _auth_layout(title: str, card_parts: list):
+    """Branded auth card layout for login/register pages."""
+    return (
+        Title(f"{title} — Mentastic"),
+        Style(LANDING_CSS),
+        Main(
+            Div(
+                Div(
+                    Span("M", cls="logo-icon"),
+                    Div("Mentastic", cls="logo-text"),
+                    Div("Human Performance & Readiness", cls="logo-tagline"),
+                    cls="auth-logo",
+                ),
+                Div(*card_parts, cls="auth-card"),
+                Div("2026 Mentastic. All rights reserved.", cls="auth-footer"),
+                cls="auth-wrapper",
+            ),
+        ),
+    )
+
+
 # ---------------------------------------------------------------------------
-# Left pane
+# Left pane (chat sidebar)
 # ---------------------------------------------------------------------------
 
 def _left_pane(session):
     user = session.get("user")
-    thread_id = session.get("thread_id", "")
 
     parts = [
-        # Header
         Div(
             A("Mentastic", href="/", cls="brand"),
             Span("PATRICK", cls="chat-badge"),
             cls="sidebar-header",
         ),
-        # New chat
-        A("+ New Chat", href="/?new=1", cls="new-chat-btn"),
+        A("+ New Chat", href="/chat?new=1", cls="new-chat-btn"),
     ]
 
-    # Conversation list
     parts.append(Div(
         H4("Conversations"),
         Div(id="conv-list", hx_get="/agui-conv/list", hx_trigger="load", hx_swap="innerHTML"),
         cls="conv-section",
     ))
 
-    # About section (collapsible)
     parts.append(Div(
-        Button(
-            "About Mentastic", Span("\u25B6", cls="about-arrow"),
-            cls="about-toggle", id="about-toggle", onclick="toggleAbout()",
-        ),
-        Div(
-            P("Mentastic helps people and organisations stay ready, perform well under pressure, "
-              "and sustain strong results without drifting into overload."),
-            P(A("Learn more \u2192", href="/about")),
-            cls="about-content", id="about-content",
-        ),
+        A("Integrations", href="/integrations", style="font-size:0.8rem;color:#0d9488;text-decoration:none;"),
+        cls="sidebar-nav",
     ))
 
-    # Auth / User section
     if user:
         parts.append(Div(
             Div(user.get("display_name", ""), cls="name"),
@@ -813,11 +931,8 @@ def _left_pane(session):
             A("Logout", href="/logout", cls="logout-btn"),
             cls="sidebar-nav",
         ))
-    else:
-        parts.append(Div(id="auth-forms", hx_get="/agui-auth/login-form", hx_trigger="load", hx_swap="innerHTML"))
 
     parts.append(Div("Mentastic 2026", cls="sidebar-footer"))
-
     return Div(*parts, cls="left-pane")
 
 
@@ -837,8 +952,171 @@ def _right_pane():
 # Routes
 # ---------------------------------------------------------------------------
 
+# ---------------------------------------------------------------------------
+# Landing page (/)
+# ---------------------------------------------------------------------------
+
+_INTEGRATIONS = [
+    ("Google Fit", "Fitness & activity", "ready"),
+    ("Apple Health", "Sleep & vitals", "ready"),
+    ("Oura Ring", "Recovery & readiness", "ready"),
+    ("Garmin", "Stress & body battery", "ready"),
+    ("Google Calendar", "Schedule & load", "ready"),
+    ("Spotify", "Mood & listening", "ready"),
+    ("Strava", "Exercise patterns", "coming"),
+    ("Slack", "Digital overload", "coming"),
+]
+
 @rt("/")
-def get(session, new: str = "", thread: str = ""):
+def landing(session):
+    if session.get("user"):
+        return RedirectResponse("/chat", status_code=303)
+
+    return (
+        Title("Mentastic — Human Performance & Readiness"),
+        Style(LANDING_CSS),
+
+        # Nav
+        Nav(
+            A("Mentastic", href="/", cls="nav-brand"),
+            Div(
+                A("About", href="/about"),
+                A("Integrations", href="/integrations"),
+                A("Sign In", href="/signin"),
+                A("Get Started", href="/register", cls="nav-cta"),
+                cls="nav-links",
+            ),
+            cls="landing-nav",
+        ),
+
+        # Hero
+        Section(
+            H1("Build ", Span("power people"), ". Build ", Span("power teams"), "."),
+            P("Mentastic turns fragmented human signals into performance clarity. "
+              "Through Patrick, your AI companion, understand how fatigue, recovery, stress and "
+              "psychological state shape your focus, judgement, readiness and sustainable performance.",
+              cls="subtitle"),
+            Div(
+                A("Get Started Free", href="/register", cls="btn-primary"),
+                A("Learn More", href="/about", cls="btn-secondary"),
+                cls="hero-buttons",
+            ),
+            # Mini-chat preview
+            Div(
+                Div("Try Patrick — your AI performance companion", cls="mini-chat-header"),
+                Div("Hi Patrick, I've been feeling drained after meetings all week.", cls="mini-chat-msg"),
+                Div("That sounds like cognitive fatigue from sustained high-demand interactions. "
+                    "Let's look at your patterns — when do you feel most alert? "
+                    "We can find recovery windows in your schedule.", cls="mini-chat-msg patrick"),
+                Div(
+                    Input(placeholder="Ask Patrick anything...", disabled=True),
+                    Button("Try it", onclick="window.location.href='/register'"),
+                    cls="mini-chat-input",
+                ),
+                cls="mini-chat",
+            ),
+            cls="hero",
+        ),
+
+        # How it works
+        Div(
+            Section(
+                H2("How It Works"),
+                P("From scattered signals to clear, personalised guidance in four steps.", cls="section-sub"),
+                Div(
+                    Div(Div("1", cls="step-num"), H3("Connect"), P("Link wearables, calendars, and self-reports. Mentastic collects passive and active data without adding friction."), cls="step"),
+                    Div(Div("2", cls="step-num"), H3("Understand"), P("AI pattern recognition turns fragmented signals into a coherent picture of your readiness, stress, and recovery state."), cls="step"),
+                    Div(Div("3", cls="step-num"), H3("Act"), P("Patrick provides personalised guidance — not generic advice. Concrete actions matched to your current state and patterns."), cls="step"),
+                    Div(Div("4", cls="step-num"), H3("Sustain"), P("Continuous monitoring, adaptive follow-ups, and resilience building to sustain strong performance without overload."), cls="step"),
+                    cls="steps-grid",
+                ),
+                cls="section",
+            ),
+            cls="section-dark",
+        ),
+
+        # Patrick's Tools
+        Section(
+            H2("Patrick's Toolkit"),
+            P("Six evidence-based tools for understanding and improving your performance.", cls="section-sub"),
+            Div(
+                Div(Div("📋", cls="feature-icon", style="background:#eff6ff"), H3("Readiness Check-In"), P("Quick self-assessment of energy, focus, stress, and mood. Track your state over time."), cls="feature-card"),
+                Div(Div("🔍", cls="feature-icon", style="background:#f5f3ff"), H3("Performance Scan"), P("AI-guided conversation about your current performance state across six key areas."), cls="feature-card"),
+                Div(Div("💚", cls="feature-icon", style="background:#f0fdf4"), H3("Recovery Plan"), P("Personalised physical, cognitive, and emotional recovery recommendations."), cls="feature-card"),
+                Div(Div("⚡", cls="feature-icon", style="background:#fffbeb"), H3("Stress & Load Analysis"), P("Assess your demand-to-resource ratio and burnout risk with Green/Yellow/Red framing."), cls="feature-card"),
+                Div(Div("📊", cls="feature-icon", style="background:#fef2f2"), H3("Readiness Report"), P("View trends over 7, 14, or 30 days. Detect upward stress or declining energy patterns."), cls="feature-card"),
+                Div(Div("🛡", cls="feature-icon", style="background:#ecfeff"), H3("Resilience Builder"), P("30 guided exercises across 6 focus areas: stress, energy, focus, sleep, pressure, general."), cls="feature-card"),
+                cls="features-grid",
+            ),
+            cls="section",
+        ),
+
+        # Integrations preview
+        Div(
+            Section(
+                H2("Connect Your Data"),
+                P("Mentastic integrates with the tools you already use to build a complete picture.", cls="section-sub"),
+                Div(
+                    *[Div(
+                        Div({"Google Fit":"🏃","Apple Health":"❤️","Oura Ring":"💍","Garmin":"⌚",
+                             "Google Calendar":"📅","Spotify":"🎵","Strava":"🚴","Slack":"💬"}.get(name,"📊"), cls="int-icon"),
+                        Div(name, cls="int-name"),
+                        Div("Ready" if status == "ready" else "Coming soon", cls="int-status"),
+                        cls="integration-card",
+                    ) for name, desc, status in _INTEGRATIONS],
+                    cls="integrations-grid",
+                ),
+                P(A("View all integrations →", href="/integrations"), style="text-align:center;margin-top:1.5rem;"),
+                cls="section",
+            ),
+            cls="section-dark",
+        ),
+
+        # Sectors
+        Section(
+            H2("Built for High-Responsibility Environments"),
+            P("One intelligence system. Multiple sectors. One outcome: stronger people, stronger teams.", cls="section-sub"),
+            Div(
+                Div(H3("🎖 Military & Defence"), P("Strengthen operational readiness. Detect strain before it becomes failure. Support cognitive readiness and recovery in demanding conditions."), cls="sector-card"),
+                Div(H3("🏢 Private Sector"), P("Improve performance quality and reduce hidden productivity loss. Connect workforce wellbeing to measurable performance drivers."), cls="sector-card"),
+                Div(H3("🏥 Government & Frontline"), P("Protect human capability where performance quality directly affects safety, service quality and continuity."), cls="sector-card"),
+                cls="sectors-grid",
+            ),
+            cls="section",
+        ),
+
+        # CTA
+        Div(
+            H2("Ready to perform at your best?"),
+            P("Start with a free conversation with Patrick. No credit card required."),
+            Div(
+                A("Create Free Account", href="/register", cls="btn-primary"),
+                A("Sign In", href="/signin", cls="btn-secondary"),
+                cls="hero-buttons",
+            ),
+            cls="cta-section",
+        ),
+
+        # Footer
+        Div(
+            "2026 Mentastic — Human Performance & Readiness Platform. ",
+            A("About", href="/about"), " · ",
+            A("Integrations", href="/integrations"), " · ",
+            "Tallinn, Estonia",
+            cls="landing-footer",
+        ),
+    )
+
+
+# ---------------------------------------------------------------------------
+# Chat (/chat) — requires auth
+# ---------------------------------------------------------------------------
+
+@rt("/chat")
+def chat_page(session, new: str = "", thread: str = ""):
+    if not session.get("user"):
+        return RedirectResponse("/signin", status_code=303)
+
     if new == "1":
         thread_id = str(_uuid.uuid4())
         session["thread_id"] = thread_id
@@ -852,7 +1130,7 @@ def get(session, new: str = "", thread: str = ""):
             session["thread_id"] = thread_id
 
     return (
-        Title("Mentastic - Patrick"),
+        Title("Patrick — Mentastic"),
         Style(LAYOUT_CSS),
         Div(
             _left_pane(session),
@@ -869,18 +1147,11 @@ def get(session, new: str = "", thread: str = ""):
             cls="app-layout",
         ),
         Script(LAYOUT_JS),
-        Script("""
-            if ('serviceWorker' in navigator) {
-                navigator.serviceWorker.register('/sw.js').catch(function(e) {
-                    console.log('SW registration failed:', e);
-                });
-            }
-        """),
     )
 
 
 @rt("/agui-conv/list")
-def get(session):
+def conv_list(session):
     current_tid = session.get("thread_id", "")
     user_id = session.get("user", {}).get("user_id") if session.get("user") else None
     try:
@@ -897,85 +1168,163 @@ def get(session):
         title = c.get("first_msg") or c.get("title") or "New chat"
         if len(title) > 40:
             title = title[:40] + "..."
-        cls = "conv-item conv-active" if tid == current_tid else "conv-item"
-        items.append(A(title, href=f"/?thread={tid}", cls=cls))
+        cls_name = "conv-item conv-active" if tid == current_tid else "conv-item"
+        items.append(A(title, href=f"/chat?thread={tid}", cls=cls_name))
 
     return Div(*items)
 
 
 # ---------------------------------------------------------------------------
-# Auth routes
+# Auth routes — standalone pages
 # ---------------------------------------------------------------------------
 
-@rt("/agui-auth/login-form")
-def login_form_fragment():
-    return Div(
+@rt("/signin")
+def signin(session, email: str = "", password: str = "", error: str = ""):
+    if email and password:
+        from utils.auth import authenticate
+        user = authenticate(email, password)
+        if not user:
+            return RedirectResponse("/signin?error=Invalid+email+or+password", status_code=303)
+        _session_login(session, user)
+        return RedirectResponse("/chat", status_code=303)
+
+    if session.get("user"):
+        return RedirectResponse("/chat", status_code=303)
+
+    parts = [H2("Sign In")]
+    if error:
+        parts.append(P(error, cls="error-msg"))
+    parts.append(
         Form(
-            Input(type="email", name="email", placeholder="Email", required=True),
+            Input(type="email", name="email", placeholder="Email", required=True, autofocus=True),
             Input(type="password", name="password", placeholder="Password", required=True),
-            Button("Login", type="submit"),
-            hx_post="/agui-auth/login", hx_target="#auth-forms", hx_swap="innerHTML",
-            cls="sidebar-auth",
-        ),
-        Div("No account? ", A("Sign up", href="#", hx_get="/agui-auth/register-form",
-              hx_target="#auth-forms", hx_swap="innerHTML"), cls="alt-link"),
-        cls="sidebar-auth",
+            Button("Sign In", type="submit"),
+            method="post", action="/signin",
+        )
     )
+    parts.append(Div("Don't have an account? ", A("Create one", href="/register"), cls="alt-link"))
+    return _auth_layout("Sign In", parts)
 
 
-@rt("/agui-auth/register-form")
-def register_form_fragment():
-    return Div(
+@rt("/register")
+def register(session, email: str = "", password: str = "", display_name: str = "", error: str = ""):
+    if email and password:
+        if len(password) < 8:
+            return RedirectResponse("/register?error=Password+must+be+at+least+8+characters", status_code=303)
+        from utils.auth import create_user, get_user_by_email
+        existing = get_user_by_email(email)
+        if existing:
+            return RedirectResponse("/signin?error=Account+already+exists.+Please+sign+in.", status_code=303)
+        user = create_user(email=email, password=password, display_name=display_name or None)
+        if not user:
+            return RedirectResponse("/register?error=Unable+to+create+account", status_code=303)
+        _session_login(session, user)
+        return RedirectResponse("/chat", status_code=303)
+
+    if session.get("user"):
+        return RedirectResponse("/chat", status_code=303)
+
+    parts = [H2("Create Account")]
+    if error:
+        parts.append(P(error, cls="error-msg"))
+    parts.append(
         Form(
-            Input(type="email", name="email", placeholder="Email", required=True),
-            Input(type="password", name="password", placeholder="Password (min 8 chars)",
-                  required=True, minlength="8"),
+            Input(type="email", name="email", placeholder="Email", required=True, autofocus=True),
+            Input(type="password", name="password", placeholder="Password (min 8 characters)", required=True, minlength="8"),
             Input(type="text", name="display_name", placeholder="Display name (optional)"),
             Button("Create Account", type="submit"),
-            hx_post="/agui-auth/register", hx_target="#auth-forms", hx_swap="innerHTML",
-            cls="sidebar-auth",
-        ),
-        Div("Have an account? ", A("Login", href="#", hx_get="/agui-auth/login-form",
-              hx_target="#auth-forms", hx_swap="innerHTML"), cls="alt-link"),
-        cls="sidebar-auth",
+            method="post", action="/register",
+        )
     )
-
-
-@rt("/agui-auth/login")
-def auth_login(session, email: str = "", password: str = ""):
-    if not email or not password:
-        return Div(P("Email and password required.", cls="error-msg"), login_form_fragment())
-    from utils.auth import authenticate
-    user = authenticate(email, password)
-    if not user:
-        return Div(P("Invalid email or password.", cls="error-msg"), login_form_fragment())
-    _session_login(session, user)
-    return Div(P("Logged in!", cls="success-msg"),
-               Script("setTimeout(function(){ window.location.reload(); }, 500);"))
-
-
-@rt("/agui-auth/register")
-def auth_register(session, email: str = "", password: str = "", display_name: str = ""):
-    if not email or not password:
-        return Div(P("Email and password required.", cls="error-msg"), register_form_fragment())
-    if len(password) < 8:
-        return Div(P("Password must be at least 8 characters.", cls="error-msg"), register_form_fragment())
-    from utils.auth import create_user, get_user_by_email
-    existing = get_user_by_email(email)
-    if existing:
-        return Div(P("Account already exists. Please login.", cls="error-msg"), login_form_fragment())
-    user = create_user(email=email, password=password, display_name=display_name or None)
-    if not user:
-        return Div(P("Unable to create account.", cls="error-msg"), register_form_fragment())
-    _session_login(session, user)
-    return Div(P("Account created!", cls="success-msg"),
-               Script("setTimeout(function(){ window.location.reload(); }, 500);"))
+    parts.append(Div("Already have an account? ", A("Sign in", href="/signin"), cls="alt-link"))
+    return _auth_layout("Register", parts)
 
 
 @rt("/logout")
 def logout(session):
     session.clear()
-    return RedirectResponse("/", status_code=307)
+    return RedirectResponse("/", status_code=303)
+
+
+# ---------------------------------------------------------------------------
+# Integrations page
+# ---------------------------------------------------------------------------
+
+_ALL_INTEGRATIONS = [
+    ("Google Fit", "🏃", "Fitness & activity tracking", "Steps, calories, workouts, heart rate zones", "ready", "arcade.dev"),
+    ("Apple Health", "❤️", "Sleep & vital signs", "Sleep stages, resting HR, HRV, respiratory rate", "ready", "arcade.dev"),
+    ("Oura Ring", "💍", "Recovery & readiness", "Sleep score, readiness score, activity, temperature", "ready", "composio.dev"),
+    ("Garmin", "⌚", "Stress & body battery", "Stress level, body battery, sleep, pulse ox", "ready", "composio.dev"),
+    ("Google Calendar", "📅", "Schedule & cognitive load", "Meeting density, focus time blocks, overload detection", "ready", "arcade.dev"),
+    ("Spotify", "🎵", "Mood & listening patterns", "Listening habits, genre patterns, wind-down music", "ready", "arcade.dev"),
+    ("Strava", "🚴", "Exercise patterns", "Training load, recovery needs, activity trends", "coming", "composio.dev"),
+    ("Slack", "💬", "Digital overload signals", "Message volume, after-hours activity, notification patterns", "coming", "arcade.dev"),
+    ("Fitbit", "📱", "Activity & sleep", "Steps, sleep stages, active minutes, heart rate", "coming", "composio.dev"),
+    ("Withings", "⚖️", "Body composition", "Weight trends, body composition, blood pressure", "coming", "composio.dev"),
+    ("Polar", "🏊", "Training & recovery", "Training load, orthostatic test, sleep tracking", "planned", "composio.dev"),
+    ("Whoop", "🔴", "Strain & recovery", "Strain score, recovery score, sleep performance", "planned", "composio.dev"),
+]
+
+@rt("/integrations")
+def integrations(session):
+    ready = [i for i in _ALL_INTEGRATIONS if i[4] == "ready"]
+    coming = [i for i in _ALL_INTEGRATIONS if i[4] == "coming"]
+    planned = [i for i in _ALL_INTEGRATIONS if i[4] == "planned"]
+
+    def _card(name, icon, subtitle, detail, status, provider):
+        badge_color = {"ready": "#09c209", "coming": "#f59e0b", "planned": "#94a3b8"}[status]
+        badge_text = {"ready": "Ready", "coming": "Coming Soon", "planned": "Planned"}[status]
+        return Div(
+            Div(icon, cls="int-icon", style="font-size:2rem;margin-bottom:0.5rem;"),
+            Div(name, style="font-weight:600;color:#093c32;font-size:0.95rem;"),
+            Div(subtitle, style="font-size:0.8rem;color:#64748b;margin:0.25rem 0;"),
+            Div(detail, style="font-size:0.75rem;color:#94a3b8;line-height:1.4;margin:0.5rem 0;"),
+            Div(
+                Span(badge_text, style=f"background:{badge_color}15;color:{badge_color};padding:0.2rem 0.5rem;border-radius:4px;font-size:0.7rem;font-weight:600;"),
+                Span(f"via {provider}", style="font-size:0.65rem;color:#94a3b8;margin-left:0.5rem;"),
+            ),
+            style="background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:1.25rem;",
+        )
+
+    return (
+        Title("Integrations — Mentastic"),
+        Style(LANDING_CSS),
+        Nav(
+            A("Mentastic", href="/", cls="nav-brand"),
+            Div(
+                A("About", href="/about"),
+                A("Chat", href="/chat"),
+                A("Sign In" if not session.get("user") else "Chat", href="/signin" if not session.get("user") else "/chat", cls="nav-cta"),
+                cls="nav-links",
+            ),
+            cls="landing-nav",
+        ),
+        Div(
+            Section(
+                H2("Data Integrations"),
+                P("Mentastic connects to the tools you already use — wearables, calendars, social platforms — "
+                  "to build a complete picture of your readiness and performance without added friction.", cls="section-sub"),
+                P("Integrations are powered by ", A("arcade.dev", href="https://arcade.dev"), " and ",
+                  A("composio.dev", href="https://composio.dev"), " for secure, privacy-aware data connections.",
+                  style="text-align:center;color:#64748b;font-size:0.9rem;margin-bottom:2rem;"),
+
+                H3("Ready", style="color:#09c209;margin-bottom:1rem;"),
+                Div(*[_card(*i) for i in ready], style="display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;margin-bottom:2.5rem;"),
+
+                H3("Coming Soon", style="color:#f59e0b;margin-bottom:1rem;"),
+                Div(*[_card(*i) for i in coming], style="display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;margin-bottom:2.5rem;"),
+
+                H3("Planned", style="color:#94a3b8;margin-bottom:1rem;"),
+                Div(*[_card(*i) for i in planned], style="display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;margin-bottom:2rem;"),
+
+                P("Have a data source you'd like us to support? ", A("Let us know", href="mailto:hello@mentastic.me"),
+                  style="text-align:center;color:#64748b;font-size:0.9rem;margin-top:2rem;"),
+                cls="section",
+            ),
+            style="padding-top:4rem;min-height:100vh;background:#f8fafc;",
+        ),
+        Div("2026 Mentastic", cls="landing-footer"),
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -983,16 +1332,26 @@ def logout(session):
 # ---------------------------------------------------------------------------
 
 @rt("/about")
-def about():
+def about(session):
     return (
-        Title("About Mentastic"),
-        Style(LAYOUT_CSS),
-        Div(
+        Title("About — Mentastic"),
+        Style(LANDING_CSS),
+        Nav(
+            A("Mentastic", href="/", cls="nav-brand"),
             Div(
-                H1("Mentastic"),
-                P("From fragmented signals to performance clarity.", cls="tagline"),
+                A("Integrations", href="/integrations"),
+                A("Chat", href="/chat"),
+                A("Sign In" if not session.get("user") else "Chat", href="/signin" if not session.get("user") else "/chat", cls="nav-cta"),
+                cls="nav-links",
+            ),
+            cls="landing-nav",
+        ),
+        Div(
+            Section(
+                H1("Mentastic", style="color:#093c32;"),
+                P("From fragmented signals to performance clarity.", style="font-size:1.15rem;color:#09c209;font-style:italic;margin:1rem 0 2rem;"),
 
-                H2("What is Mentastic?"),
+                H2("What is Mentastic?", style="text-align:left;"),
                 P("Mentastic is a human performance intelligence system that turns fragmented data into actionable clarity. "
                   "By combining passive and active inputs — including wearables, sleep, mood, behaviour patterns, digital habits, "
                   "self-reports, psychometrics and AI-guided dialogue — Mentastic helps individuals and organisations understand "
@@ -1000,21 +1359,20 @@ def about():
                 P("Built as a modular toolbox, Mentastic can be implemented across defence, workplaces, healthcare, "
                   "education and other high-responsibility environments."),
 
-                H2("How it works"),
+                H2("How It Works", style="text-align:left;"),
                 P("Mentastic works as a modular toolbox and intelligence layer for human performance and readiness. "
                   "It combines passive data, self-report, assessments and guided interaction into an adaptive view of the "
                   "user's current state. Through Patrick, our AI companion, it helps users understand what is affecting "
                   "readiness and performance, and what to do next."),
 
-                H2("Core promise"),
+                H2("Core Promise", style="text-align:left;"),
                 P("Mentastic helps people and organisations stay ready, perform well under pressure, "
-                  "and sustain strong results without drifting into overload."),
+                  "and sustain strong results without drifting into overload.", style="font-weight:600;"),
                 P("It does this by turning fragmented human signals into clear, personalised insight that "
                   "supports better decisions, earlier action and more effective support over time."),
 
-                H2("Value Propositions"),
-
-                H3("Military & Defence"),
+                H2("Value Propositions", style="text-align:left;"),
+                H3("Military & Defence", style="color:#093c32;"),
                 P("Mentastic helps defence organisations strengthen operational readiness by turning human signals "
                   "into early insight on fatigue, stress load, recovery and resilience."),
                 Ul(
@@ -1023,8 +1381,7 @@ def about():
                     Li("Stronger resilience and recovery in high-pressure roles"),
                     Li("Privacy-aware intelligence for individuals and command-level structures"),
                 ),
-
-                H3("Private Sector Employers"),
+                H3("Private Sector Employers", style="color:#093c32;"),
                 P("Mentastic helps employers improve performance quality, reduce hidden productivity loss, "
                   "and build more resilient teams through personalised, data-driven insight."),
                 Ul(
@@ -1033,8 +1390,7 @@ def about():
                     Li("Stronger employee retention through smarter support"),
                     Li("Connects workforce wellbeing to measurable performance drivers"),
                 ),
-
-                H3("Government, Hospitals & Frontline"),
+                H3("Government, Hospitals & Frontline", style="color:#093c32;"),
                 P("Mentastic helps public-sector and frontline organisations protect human capability "
                   "in environments where performance quality directly affects safety and continuity."),
                 Ul(
@@ -1044,9 +1400,9 @@ def about():
                     Li("Useful across prevention, early intervention and ongoing support"),
                 ),
 
-                H2("What makes Mentastic different"),
+                H2("What Makes Mentastic Different", style="text-align:left;"),
                 Ul(
-                    Li("Integrates data from wearables, mood, sleep, routines, digital habits, behavioural patterns, self-reports and conversation into one intelligence model"),
+                    Li("Integrates wearables, mood, sleep, routines, digital habits, behavioural patterns, self-reports and conversation into one intelligence model"),
                     Li("Combines passive + active data in one system"),
                     Li("Personalised guidance, not generic advice"),
                     Li("Connects wellbeing with readiness, focus, resilience and sustainable performance"),
@@ -1054,15 +1410,19 @@ def about():
                     Li("Privacy-aware organisational value"),
                     Li("Modular toolbox architecture across sectors"),
                 ),
-
                 P("One intelligence system. Multiple tools. Multiple sectors. "
-                  "One outcome: stronger people, stronger teams.", cls="tagline"),
+                  "One outcome: stronger people, stronger teams.",
+                  style="font-style:italic;color:#09c209;margin-top:1.5rem;"),
 
-                A("\u2190 Back to Patrick", href="/", cls="back-link"),
-                cls="about-page",
+                Div(
+                    A("← Back to Home", href="/", style="color:#09c209;text-decoration:none;font-size:0.9rem;"),
+                    style="margin-top:2rem;",
+                ),
+                cls="section", style="max-width:800px;",
             ),
-            style="height: 100vh; overflow-y: auto; background: #f8fafc; padding: 1rem;",
+            style="padding-top:4rem;min-height:100vh;background:#f8fafc;",
         ),
+        Div("2026 Mentastic — Tallinn, Estonia", cls="landing-footer"),
     )
 
 

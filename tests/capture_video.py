@@ -1,8 +1,8 @@
 """
 Capture Product Demo Video
 
-Playwright script that walks through the Mentastic platform,
-capturing frames for an MP4 video and animated GIF.
+Playwright script that walks through the full Mentastic flow:
+landing → register → chat (all 6 tools) → integrations → about → mobile.
 
 Usage:
     python app.py &
@@ -29,7 +29,6 @@ frame_num = 0
 
 
 async def capture(page, label, pause=1.0):
-    """Capture a frame with a pause for natural pacing."""
     global frame_num
     await asyncio.sleep(pause)
     path = FRAMES_DIR / f"{frame_num:03d}_{label}.png"
@@ -39,14 +38,12 @@ async def capture(page, label, pause=1.0):
 
 
 async def wait_for_ws(page, timeout=10):
-    """Wait for chat form to load AND WebSocket to connect."""
     for _ in range(timeout * 4):
         ready = await page.evaluate("""
             () => {
                 var ta = document.getElementById('chat-input');
-                var fm = document.getElementById('chat-form');
                 var wsExt = document.querySelector('[ws-send]');
-                return !!(ta && fm && wsExt);
+                return !!(ta && wsExt);
             }
         """)
         if ready:
@@ -57,16 +54,12 @@ async def wait_for_ws(page, timeout=10):
 
 
 async def send_chat(page, msg, wait=20.0):
-    """Send a message via JS requestSubmit, then wait for streaming response."""
     await wait_for_ws(page)
     await page.evaluate(f"""
         () => {{
             var ta = document.getElementById('chat-input');
             var fm = document.getElementById('chat-form');
-            if (ta && fm) {{
-                ta.value = {repr(msg)};
-                fm.requestSubmit();
-            }}
+            if (ta && fm) {{ ta.value = {repr(msg)}; fm.requestSubmit(); }}
         }}
     """)
     await asyncio.sleep(wait)
@@ -85,85 +78,70 @@ async def run():
 
         # ===== LANDING =====
         await page.goto(BASE_URL)
-        await asyncio.sleep(2)
-        await capture(page, "landing", 0.5)
+        await capture(page, "landing_hero", 2)
 
-        # ===== LOGIN =====
-        # Try to login (user should exist from capture_guide or manual setup)
+        await page.evaluate("window.scrollTo(0, 900)")
+        await capture(page, "landing_features", 1)
+
+        await page.evaluate("window.scrollTo(0, 2200)")
+        await capture(page, "landing_integrations", 1)
+
+        # ===== REGISTER =====
+        await page.goto(f"{BASE_URL}/register")
+        await capture(page, "register", 1)
+
         await page.fill('input[name="email"]', EMAIL)
         await page.fill('input[name="password"]', PASSWORD)
-        await capture(page, "login_filled", 0.5)
+        await page.fill('input[name="display_name"]', "Demo User")
+        await capture(page, "register_filled", 0.5)
 
-        await page.click('button:has-text("Login")')
-        await asyncio.sleep(2)
+        await page.click('button[type="submit"]')
+        await asyncio.sleep(3)
 
-        # ===== WELCOME SCREEN =====
-        await page.goto(f"{BASE_URL}/?new=1")
+        # ===== CHAT: Welcome =====
+        await page.goto(f"{BASE_URL}/chat?new=1")
         await asyncio.sleep(3)
         await wait_for_ws(page)
-        await capture(page, "welcome_screen", 1.5)
-        await capture(page, "welcome_screen_hold", 1.0)
+        await capture(page, "chat_welcome", 1.5)
 
         # ===== CHAT: Readiness Check-In =====
         await send_chat(page, "I'd like to do a readiness check-in", 15)
-        await capture(page, "chat_readiness_checkin", 1.0)
-        await page.evaluate("() => { var m=document.getElementById('chat-messages'); if(m) m.scrollTop=m.scrollHeight; }")
-        await capture(page, "chat_readiness_checkin_scroll", 0.5)
-
-        # ===== CHAT: Performance Scan =====
-        await page.goto(f"{BASE_URL}/?new=1")
-        await asyncio.sleep(3)
-        await send_chat(page, "Let's do a performance scan", 15)
-        await capture(page, "chat_performance_scan", 1.0)
+        await capture(page, "chat_readiness", 1)
 
         # ===== CHAT: Recovery Plan =====
-        await page.goto(f"{BASE_URL}/?new=1")
+        await page.goto(f"{BASE_URL}/chat?new=1")
         await asyncio.sleep(3)
         await send_chat(page, "Help me create a recovery plan", 15)
-        await capture(page, "chat_recovery_plan", 1.0)
-
-        # ===== CHAT: Stress & Load =====
-        await page.goto(f"{BASE_URL}/?new=1")
-        await asyncio.sleep(3)
-        await send_chat(page, "Analyze my stress and load levels", 15)
-        await capture(page, "chat_stress_load", 1.0)
-
-        # ===== CHAT: Readiness Report =====
-        await page.goto(f"{BASE_URL}/?new=1")
-        await asyncio.sleep(3)
-        await send_chat(page, "Show me my readiness report", 15)
-        await capture(page, "chat_readiness_report", 1.0)
+        await capture(page, "chat_recovery", 1)
 
         # ===== CHAT: Resilience Builder =====
-        await page.goto(f"{BASE_URL}/?new=1")
+        await page.goto(f"{BASE_URL}/chat?new=1")
         await asyncio.sleep(3)
         await send_chat(page, "I want to work on resilience building", 15)
-        await capture(page, "chat_resilience_builder", 1.0)
+        await capture(page, "chat_resilience", 1)
+
+        # ===== INTEGRATIONS =====
+        await page.goto(f"{BASE_URL}/integrations")
+        await capture(page, "integrations", 2)
+
+        # ===== ABOUT =====
+        await page.goto(f"{BASE_URL}/about")
+        await capture(page, "about", 1.5)
 
         # ===== CONVERSATION HISTORY =====
-        await page.goto(BASE_URL)
+        await page.goto(f"{BASE_URL}/chat")
         await asyncio.sleep(2)
-        await capture(page, "conversation_history", 1.0)
+        await capture(page, "conversation_history", 1)
 
-        # ===== ABOUT PAGE =====
-        await page.goto(f"{BASE_URL}/about")
-        await asyncio.sleep(1)
-        await capture(page, "about_page", 1.5)
-        await page.evaluate("window.scrollTo(0, 600)")
-        await asyncio.sleep(0.5)
-        await capture(page, "about_page_scroll", 1.0)
-
-        # ===== MOBILE VIEW =====
+        # ===== MOBILE =====
         await page.set_viewport_size({"width": 390, "height": 844})
-        await page.goto(f"{BASE_URL}/?new=1")
-        await asyncio.sleep(2)
-        await capture(page, "mobile_welcome", 1.5)
+        await page.goto(BASE_URL)
+        await capture(page, "mobile_landing", 2)
 
-        # ===== BACK TO DESKTOP WELCOME =====
+        # ===== BACK TO DESKTOP =====
         await page.set_viewport_size({"width": 1440, "height": 900})
-        await page.goto(f"{BASE_URL}/?new=1")
-        await asyncio.sleep(2)
-        await capture(page, "final_welcome", 1.5)
+        await page.goto(BASE_URL)
+        await capture(page, "final_landing", 1.5)
 
         await browser.close()
 
@@ -171,7 +149,6 @@ async def run():
 
 
 def build_video():
-    """Assemble frames into MP4 video and GIF."""
     from PIL import Image
     import av
     import numpy as np
@@ -184,10 +161,9 @@ def build_video():
     images = [np.array(Image.open(f)) for f in frames]
     print(f"  Building video from {len(images)} frames...")
 
-    # --- MP4 ---
     mp4_path = ROOT / "docs" / "demo_video.mp4"
     fps = 2
-    hold_frames = 3  # each screenshot held for 1.5 seconds
+    hold_frames = 3
 
     container = av.open(str(mp4_path), mode="w")
     h, w = images[0].shape[:2]
@@ -211,7 +187,6 @@ def build_video():
     total_secs = len(images) * hold_frames / fps
     print(f"  Saved MP4: {mp4_path} ({total_secs:.0f}s)")
 
-    # --- GIF ---
     gif_path = ROOT / "docs" / "demo_video.gif"
     pil_frames = []
     for img in images:
