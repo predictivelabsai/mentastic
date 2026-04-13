@@ -782,20 +782,20 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
 .nav-cta { background: #09c209 !important; color: #fff !important; padding: 0.4rem 1rem; border-radius: 6px; font-weight: 600; opacity: 1 !important; }
 
 /* Hero */
-.hero { background: linear-gradient(135deg, #093c32 0%, #0d5c47 50%, #0a4a3a 100%); color: #dafef5; padding: 8rem 2rem 5rem; text-align: center; min-height: 80vh; display: flex; flex-direction: column; justify-content: center; align-items: center; }
-.hero h1 { font-size: 3rem; font-weight: 800; margin-bottom: 1rem; line-height: 1.15; max-width: 800px; }
-.hero h1 span { color: #09c209; }
-.hero .subtitle { font-size: 1.15rem; opacity: 0.9; max-width: 650px; margin: 0 auto 2.5rem; line-height: 1.6; }
+.hero { background: linear-gradient(135deg, #0a4a3a 0%, #0d5c47 50%, #0f6b54 100%); color: #ffffff; padding: 8rem 2rem 5rem; text-align: center; min-height: 80vh; display: flex; flex-direction: column; justify-content: center; align-items: center; }
+.hero h1 { font-size: 3rem; font-weight: 800; margin-bottom: 1rem; line-height: 1.15; max-width: 800px; color: #ffffff; }
+.hero h1 span { color: #4ade80; }
+.hero .subtitle { font-size: 1.15rem; color: rgba(255,255,255,0.8); max-width: 650px; margin: 0 auto 2.5rem; line-height: 1.6; }
 .hero-buttons { display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap; }
 .btn-primary { background: #09c209; color: #fff; padding: 0.75rem 2rem; border-radius: 8px; font-size: 1rem; font-weight: 600; text-decoration: none; border: none; cursor: pointer; transition: background 0.2s; }
 .btn-primary:hover { background: #07a507; }
-.btn-secondary { background: transparent; color: #dafef5; padding: 0.75rem 2rem; border-radius: 8px; font-size: 1rem; font-weight: 600; text-decoration: none; border: 2px solid rgba(218,254,245,0.3); transition: all 0.2s; }
-.btn-secondary:hover { border-color: #dafef5; background: rgba(218,254,245,0.1); }
+.btn-secondary { background: transparent; color: #ffffff; padding: 0.75rem 2rem; border-radius: 8px; font-size: 1rem; font-weight: 600; text-decoration: none; border: 2px solid rgba(255,255,255,0.4); transition: all 0.2s; }
+.btn-secondary:hover { border-color: #fff; background: rgba(255,255,255,0.1); }
 
 /* Mini-chat preview */
 .mini-chat { max-width: 500px; margin: 3rem auto 0; background: rgba(255,255,255,0.08); border-radius: 16px; padding: 1.5rem; backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.12); }
 .mini-chat-header { font-size: 0.8rem; color: rgba(218,254,245,0.6); margin-bottom: 0.75rem; text-align: left; }
-.mini-chat-msg { background: rgba(255,255,255,0.1); border-radius: 12px; padding: 0.75rem 1rem; margin-bottom: 0.5rem; font-size: 0.9rem; text-align: left; }
+.mini-chat-msg { background: rgba(255,255,255,0.1); border-radius: 12px; padding: 0.75rem 1rem; margin-bottom: 0.5rem; font-size: 0.9rem; text-align: left; color: #ffffff; }
 .mini-chat-msg.patrick { border-left: 3px solid #09c209; }
 .mini-chat-input { display: flex; gap: 0.5rem; margin-top: 0.75rem; }
 .mini-chat-input input { flex: 1; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.15); border-radius: 8px; padding: 0.6rem 0.75rem; color: #dafef5; font-size: 0.85rem; }
