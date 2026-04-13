@@ -368,11 +368,13 @@ class UI:
 
     def _render_welcome(self):
         cards = [
-            ("Readiness Check-In", "Quick self-assessment of your current state", "I'd like to do a readiness check-in", "#3b82f6", _ICON_CLIPBOARD),
-            ("Performance Scan", "AI-guided analysis of your performance", "Let's do a performance scan", "#8b5cf6", _ICON_SEARCH),
-            ("Recovery Plan", "Personalized recovery recommendations", "Help me create a recovery plan", "#10b981", _ICON_HEART),
-            ("Stress & Load", "Assess stress levels and burnout risk", "Analyze my stress and load levels", "#f59e0b", _ICON_ACTIVITY),
-            ("Readiness Report", "View your readiness trends over time", "Show me my readiness report", "#ef4444", _ICON_CHART),
+            # Top row: current state & performance overview
+            ("My Readiness Now", "See your current energy, focus, stress & mood", "What's my current readiness state? Give me a quick overview of how I'm doing based on my recent check-ins and patterns.", "#3b82f6", _ICON_CHART),
+            ("Performance Overview", "Weekly trends and patterns at a glance", "Show me my performance overview — energy trends, stress patterns, sleep quality, and readiness score for this week.", "#8b5cf6", _ICON_SEARCH),
+            ("Stress & Load Check", "Current demand vs. resource balance", "Analyze my current stress and load levels. What's my demand-to-resource ratio and burnout risk right now?", "#f59e0b", _ICON_ACTIVITY),
+            # Bottom row: improvement actions
+            ("Readiness Check-In", "Quick self-assessment to track your state", "I'd like to do a readiness check-in", "#10b981", _ICON_CLIPBOARD),
+            ("Recovery Plan", "Personalized recovery recommendations", "Help me create a recovery plan based on my current state", "#ef4444", _ICON_HEART),
             ("Resilience Builder", "Guided exercises for building resilience", "I want to work on resilience building", "#06b6d4", _ICON_SHIELD),
         ]
         card_els = []
@@ -978,7 +980,8 @@ def _left_pane(session):
     ))
 
     parts.append(Div(
-        A("Integrations", href="/integrations", style="font-size:0.8rem;color:#0d9488;text-decoration:none;"),
+        A("Dashboard", href="/dashboard", style="font-size:0.8rem;color:#0d9488;text-decoration:none;display:block;padding:0.25rem 0;"),
+        A("Integrations", href="/integrations", style="font-size:0.8rem;color:#0d9488;text-decoration:none;display:block;padding:0.25rem 0;"),
         cls="sidebar-nav",
     ))
 
@@ -1495,68 +1498,6 @@ _ALL_INTEGRATIONS = [
     ("Whoop", "🔴", "Strain & recovery", "Strain score, recovery score, sleep performance", "planned", "composio.dev"),
 ]
 
-@rt("/integrations")
-def integrations(session):
-    ready = [i for i in _ALL_INTEGRATIONS if i[4] == "ready"]
-    coming = [i for i in _ALL_INTEGRATIONS if i[4] == "coming"]
-    planned = [i for i in _ALL_INTEGRATIONS if i[4] == "planned"]
-
-    def _card(name, icon, subtitle, detail, status, provider):
-        badge_color = {"ready": "#09c209", "coming": "#f59e0b", "planned": "#94a3b8"}[status]
-        badge_text = {"ready": "Ready", "coming": "Coming Soon", "planned": "Planned"}[status]
-        return Div(
-            Div(icon, cls="int-icon", style="font-size:2rem;margin-bottom:0.5rem;"),
-            Div(name, style="font-weight:600;color:#093c32;font-size:0.95rem;"),
-            Div(subtitle, style="font-size:0.8rem;color:#64748b;margin:0.25rem 0;"),
-            Div(detail, style="font-size:0.75rem;color:#94a3b8;line-height:1.4;margin:0.5rem 0;"),
-            Div(
-                Span(badge_text, style=f"background:{badge_color}15;color:{badge_color};padding:0.2rem 0.5rem;border-radius:4px;font-size:0.7rem;font-weight:600;"),
-                Span(f"via {provider}", style="font-size:0.65rem;color:#94a3b8;margin-left:0.5rem;"),
-            ),
-            style="background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:1.25rem;",
-        )
-
-    return (
-        Title("Integrations — Mentastic"),
-        Style(LANDING_CSS),
-        Nav(
-            A("Mentastic", href="/", cls="nav-brand"),
-            Div(
-                A("About", href="/about"),
-                A("Chat", href="/chat"),
-                A("Sign In" if not session.get("user") else "Chat", href="/signin" if not session.get("user") else "/chat", cls="nav-cta"),
-                cls="nav-links",
-            ),
-            cls="landing-nav",
-        ),
-        Div(
-            Section(
-                H2("Data Integrations"),
-                P("Mentastic connects to the tools you already use — wearables, calendars, social platforms — "
-                  "to build a complete picture of your readiness and performance without added friction.", cls="section-sub"),
-                P("Integrations are powered by ", A("arcade.dev", href="https://arcade.dev"), " and ",
-                  A("composio.dev", href="https://composio.dev"), " for secure, privacy-aware data connections.",
-                  style="text-align:center;color:#64748b;font-size:0.9rem;margin-bottom:2rem;"),
-
-                H3("Ready", style="color:#09c209;margin-bottom:1rem;"),
-                Div(*[_card(*i) for i in ready], style="display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;margin-bottom:2.5rem;"),
-
-                H3("Coming Soon", style="color:#f59e0b;margin-bottom:1rem;"),
-                Div(*[_card(*i) for i in coming], style="display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;margin-bottom:2.5rem;"),
-
-                H3("Planned", style="color:#94a3b8;margin-bottom:1rem;"),
-                Div(*[_card(*i) for i in planned], style="display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;margin-bottom:2rem;"),
-
-                P("Have a data source you'd like us to support? ", A("Let us know", href="mailto:hello@mentastic.me"),
-                  style="text-align:center;color:#64748b;font-size:0.9rem;margin-top:2rem;"),
-                cls="section",
-            ),
-            style="padding-top:4rem;min-height:100vh;background:#f8fafc;",
-        ),
-        Div("2026 Mentastic", cls="landing-footer"),
-    )
-
-
 # ---------------------------------------------------------------------------
 # About page
 # ---------------------------------------------------------------------------
@@ -1654,6 +1595,436 @@ def about(session):
         ),
         Div("2026 Mentastic — Tallinn, Estonia", cls="landing-footer"),
     )
+
+
+# ---------------------------------------------------------------------------
+# Dashboard — mock performance charts (inline SVG bar/pie charts)
+# ---------------------------------------------------------------------------
+
+DASHBOARD_CSS = """
+.dash-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1.5rem; margin-bottom: 2rem; }
+.dash-card { background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 1.25rem; }
+.dash-card h3 { font-size: 0.85rem; color: #64748b; margin-bottom: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; }
+.dash-stat { font-size: 2rem; font-weight: 700; color: #093c32; }
+.dash-stat-sub { font-size: 0.8rem; color: #64748b; margin-top: 0.25rem; }
+.dash-bar { display: flex; align-items: flex-end; gap: 6px; height: 120px; padding-top: 0.5rem; }
+.dash-bar-item { flex: 1; border-radius: 4px 4px 0 0; min-width: 20px; position: relative; transition: all 0.3s; }
+.dash-bar-item:hover { opacity: 0.8; }
+.dash-bar-label { font-size: 0.6rem; color: #94a3b8; text-align: center; margin-top: 4px; }
+.dash-ring { display: flex; align-items: center; gap: 1.5rem; }
+.dash-ring-legend { display: flex; flex-direction: column; gap: 0.4rem; }
+.dash-ring-item { display: flex; align-items: center; gap: 0.5rem; font-size: 0.8rem; color: #475569; }
+.dash-ring-dot { width: 10px; height: 10px; border-radius: 50%; }
+.dash-trend { display: flex; align-items: center; gap: 0.5rem; }
+.dash-trend-up { color: #16a34a; font-weight: 600; }
+.dash-trend-down { color: #dc2626; font-weight: 600; }
+.dash-trend-flat { color: #f59e0b; font-weight: 600; }
+.dash-section { margin-bottom: 1.5rem; }
+.dash-section h2 { font-size: 1.1rem; color: #093c32; margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 2px solid #f0fdfa; }
+.dash-mini-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin-bottom: 2rem; }
+.dash-mini { text-align: center; background: #fff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 1rem; }
+.dash-mini .value { font-size: 1.5rem; font-weight: 700; color: #093c32; }
+.dash-mini .label { font-size: 0.7rem; color: #64748b; margin-top: 0.25rem; }
+@media (max-width: 768px) {
+  .dash-grid { grid-template-columns: 1fr; }
+  .dash-mini-grid { grid-template-columns: repeat(2, 1fr); }
+}
+"""
+
+def _svg_bar_chart(data, colors, labels, height=120):
+    """Generate an inline SVG bar chart."""
+    max_val = max(data) if data else 1
+    n = len(data)
+    bar_w = min(40, 300 // max(n, 1))
+    gap = 6
+    w = n * (bar_w + gap)
+    bars = []
+    for i, (val, color, label) in enumerate(zip(data, colors, labels)):
+        h = max(4, int(val / max_val * (height - 20)))
+        x = i * (bar_w + gap)
+        y = height - h - 15
+        bars.append(f'<rect x="{x}" y="{y}" width="{bar_w}" height="{h}" rx="3" fill="{color}"/>')
+        bars.append(f'<text x="{x + bar_w//2}" y="{height - 2}" text-anchor="middle" font-size="9" fill="#94a3b8">{label}</text>')
+    return f'<svg width="{w}" height="{height}" viewBox="0 0 {w} {height}">{"".join(bars)}</svg>'
+
+
+def _svg_ring_chart(segments, size=100):
+    """Generate an inline SVG donut/ring chart."""
+    total = sum(v for v, _ in segments)
+    r = size // 2 - 8
+    cx = cy = size // 2
+    circumference = 2 * 3.14159 * r
+    paths = []
+    offset = 0
+    for val, color in segments:
+        pct = val / total if total else 0
+        dash = pct * circumference
+        gap = circumference - dash
+        paths.append(
+            f'<circle cx="{cx}" cy="{cy}" r="{r}" fill="none" stroke="{color}" '
+            f'stroke-width="14" stroke-dasharray="{dash:.1f} {gap:.1f}" '
+            f'stroke-dashoffset="{-offset:.1f}" transform="rotate(-90 {cx} {cy})"/>'
+        )
+        offset += dash
+    return f'<svg width="{size}" height="{size}" viewBox="0 0 {size} {size}">{"".join(paths)}</svg>'
+
+
+@rt("/dashboard")
+def dashboard(request, session):
+    if is_clerk_enabled():
+        _check_clerk_session(request, session)
+    if not session.get("user"):
+        return RedirectResponse("/signin", status_code=303)
+
+    # Mock data — would come from readiness_checkins in production
+    days = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
+    energy =  [7, 6, 8, 5, 7, 8, 7]
+    focus =   [8, 7, 6, 6, 8, 7, 8]
+    stress =  [4, 5, 6, 7, 5, 3, 4]
+    mood =    [7, 7, 6, 5, 7, 8, 8]
+    sleep_h = [7.2, 6.8, 7.5, 6.1, 7.0, 8.2, 7.8]
+    steps =   [8200, 6100, 9500, 5800, 7200, 12000, 10500]
+
+    readiness_scores = [round((e + f + m + (11 - s)) / 4, 1) for e, f, s, m in zip(energy, focus, stress, mood)]
+    avg_readiness = round(sum(readiness_scores) / len(readiness_scores), 1)
+    avg_energy = round(sum(energy) / len(energy), 1)
+    avg_stress = round(sum(stress) / len(stress), 1)
+    avg_sleep = round(sum(sleep_h) / len(sleep_h), 1)
+
+    # Ring chart: time distribution
+    ring = _svg_ring_chart([(35, "#09c209"), (25, "#0d9488"), (20, "#f59e0b"), (20, "#94a3b8")], 110)
+
+    return (
+        Title("Dashboard — Mentastic"),
+        Style(LANDING_CSS + DASHBOARD_CSS),
+        Nav(
+            A("Mentastic", href="/", cls="nav-brand"),
+            Div(
+                A("Chat", href="/chat"),
+                A("Integrations", href="/integrations"),
+                A("Dashboard", href="/dashboard", cls="nav-cta"),
+                cls="nav-links",
+            ),
+            cls="landing-nav",
+        ),
+        Div(
+            Section(
+                H1("Performance Dashboard", style="color:#093c32;font-size:1.5rem;margin-bottom:0.5rem;"),
+                P(f"Welcome back, {session['user'].get('display_name', 'there')}. Here's your weekly overview.",
+                  style="color:#64748b;margin-bottom:2rem;"),
+
+                # Top stats
+                Div(
+                    Div(Div(f"{avg_readiness}", cls="value"), Div("Readiness Score", cls="label"),
+                        Div("↑ 0.3 vs last week", cls="dash-trend dash-trend-up"), cls="dash-mini"),
+                    Div(Div(f"{avg_energy}", cls="value"), Div("Avg Energy", cls="label"),
+                        Div("→ stable", cls="dash-trend dash-trend-flat"), cls="dash-mini"),
+                    Div(Div(f"{avg_stress}", cls="value"), Div("Avg Stress", cls="label"),
+                        Div("↓ 0.5 improved", cls="dash-trend dash-trend-up"), cls="dash-mini"),
+                    Div(Div(f"{avg_sleep}h", cls="value"), Div("Avg Sleep", cls="label"),
+                        Div("↑ 0.2h", cls="dash-trend dash-trend-up"), cls="dash-mini"),
+                    cls="dash-mini-grid",
+                ),
+
+                # Charts row
+                Div(
+                    # Readiness trend
+                    Div(
+                        H3("Readiness Score — This Week"),
+                        NotStr(_svg_bar_chart(
+                            readiness_scores,
+                            ["#09c209" if s >= 7 else "#f59e0b" if s >= 5 else "#dc2626" for s in readiness_scores],
+                            days,
+                        )),
+                        cls="dash-card",
+                    ),
+                    # Energy vs Stress
+                    Div(
+                        H3("Energy vs Stress"),
+                        NotStr(_svg_bar_chart(
+                            [e for pair in zip(energy, stress) for e in pair],
+                            ["#0d9488", "#f59e0b"] * 7,
+                            [f"{d}" if i % 2 == 0 else "" for d in days for i in range(2)],
+                        )),
+                        Div(
+                            Span("■", style="color:#0d9488;margin-right:4px;"), "Energy  ",
+                            Span("■", style="color:#f59e0b;margin-right:4px;"), "Stress",
+                            style="font-size:0.7rem;color:#64748b;margin-top:0.5rem;",
+                        ),
+                        cls="dash-card",
+                    ),
+                    cls="dash-grid",
+                ),
+
+                Div(
+                    # Activity ring
+                    Div(
+                        H3("Weekly Time Distribution"),
+                        Div(
+                            NotStr(ring),
+                            Div(
+                                Div(Span(cls="dash-ring-dot", style="background:#09c209"), "Focus time (35%)", cls="dash-ring-item"),
+                                Div(Span(cls="dash-ring-dot", style="background:#0d9488"), "Recovery (25%)", cls="dash-ring-item"),
+                                Div(Span(cls="dash-ring-dot", style="background:#f59e0b"), "Meetings (20%)", cls="dash-ring-item"),
+                                Div(Span(cls="dash-ring-dot", style="background:#94a3b8"), "Other (20%)", cls="dash-ring-item"),
+                                cls="dash-ring-legend",
+                            ),
+                            cls="dash-ring",
+                        ),
+                        cls="dash-card",
+                    ),
+                    # Sleep & steps
+                    Div(
+                        H3("Sleep & Activity"),
+                        NotStr(_svg_bar_chart(
+                            [int(h * 10) for h in sleep_h],
+                            ["#6366f1"] * 7, days,
+                        )),
+                        Div(
+                            *[Div(
+                                Span(f"{s:,}", style="font-weight:600;font-size:0.85rem;color:#093c32;"),
+                                Span(f" steps", style="font-size:0.7rem;color:#94a3b8;"),
+                            ) for s in steps[-3:]],
+                            style="display:flex;gap:1rem;margin-top:0.75rem;justify-content:center;",
+                        ),
+                        cls="dash-card",
+                    ),
+                    cls="dash-grid",
+                ),
+
+                # Insights
+                Div(
+                    H2("Insights from Patrick"),
+                    Div(
+                        Div(
+                            P("Your readiness peaks mid-week and stays strong through the weekend. "
+                              "Thursday dips correlate with higher stress — consider a recovery block Thursday afternoon.",
+                              style="margin-bottom:0.5rem;"),
+                            P("Sleep consistency is good (7.2h avg) but Wednesday's 6.1h night preceded your lowest scores. "
+                              "Protecting that sleep window could prevent Thursday performance drops.",
+                              style="margin-bottom:0.5rem;"),
+                            P("Overall trajectory is positive — stress trending down, energy stable. Keep it up.",
+                              style="color:#09c209;font-weight:500;"),
+                            style="font-size:0.85rem;color:#475569;line-height:1.6;",
+                        ),
+                        cls="dash-card",
+                    ),
+                    cls="dash-section",
+                ),
+
+                Div(
+                    A("← Back to Chat", href="/chat", style="color:#09c209;text-decoration:none;font-size:0.9rem;margin-right:1.5rem;"),
+                    A("View Integrations →", href="/integrations", style="color:#09c209;text-decoration:none;font-size:0.9rem;"),
+                    style="margin-top:1rem;",
+                ),
+                cls="section", style="max-width:900px;",
+            ),
+            style="padding-top:4rem;min-height:100vh;background:#f8fafc;",
+        ),
+        Div("2026 Mentastic", cls="landing-footer"),
+    )
+
+
+# ---------------------------------------------------------------------------
+# Integrations — connection flow
+# ---------------------------------------------------------------------------
+
+_USER_INTEGRATIONS: Dict[str, set] = {}  # user_id → set of connected integration names
+
+@rt("/integrations")
+def integrations(request, session):
+    if is_clerk_enabled():
+        _check_clerk_session(request, session)
+
+    user = session.get("user")
+    user_id = user.get("user_id") if user else None
+    connected = _USER_INTEGRATIONS.get(user_id, set()) if user_id else set()
+
+    ready = [i for i in _ALL_INTEGRATIONS if i[4] == "ready"]
+    coming = [i for i in _ALL_INTEGRATIONS if i[4] == "coming"]
+    planned = [i for i in _ALL_INTEGRATIONS if i[4] == "planned"]
+
+    def _card(name, icon, subtitle, detail, status, provider):
+        is_connected = name in connected
+        badge_color = "#09c209" if is_connected else {"ready": "#3b82f6", "coming": "#f59e0b", "planned": "#94a3b8"}[status]
+        badge_text = "Connected" if is_connected else {"ready": "Connect", "coming": "Coming Soon", "planned": "Planned"}[status]
+        badge_bg = f"{badge_color}15"
+
+        action = ""
+        if is_connected:
+            action = Div(
+                Span("✓ Connected", style=f"color:#09c209;font-weight:600;font-size:0.8rem;"),
+                A("Disconnect", href=f"/integrations/disconnect?name={name}",
+                  style="font-size:0.7rem;color:#dc2626;margin-left:0.75rem;text-decoration:none;"),
+                style="margin-top:0.5rem;",
+            )
+        elif status == "ready" and user:
+            action = A(
+                "Connect →", href=f"/integrations/connect?name={name}",
+                style=f"display:inline-block;margin-top:0.5rem;padding:0.35rem 0.75rem;background:#09c209;"
+                      f"color:#fff;border-radius:6px;font-size:0.75rem;font-weight:600;text-decoration:none;",
+            )
+        elif status == "ready" and not user:
+            action = A(
+                "Sign in to connect", href="/signin",
+                style="font-size:0.75rem;color:#3b82f6;margin-top:0.5rem;display:inline-block;text-decoration:none;",
+            )
+        else:
+            action = Span(badge_text, style=f"font-size:0.75rem;color:{badge_color};margin-top:0.5rem;display:inline-block;")
+
+        return Div(
+            Div(icon, style="font-size:2rem;margin-bottom:0.5rem;"),
+            Div(name, style="font-weight:600;color:#093c32;font-size:0.95rem;"),
+            Div(subtitle, style="font-size:0.8rem;color:#64748b;margin:0.25rem 0;"),
+            Div(detail, style="font-size:0.75rem;color:#94a3b8;line-height:1.4;margin:0.5rem 0;"),
+            action,
+            Div(Span(f"via {provider}", style="font-size:0.65rem;color:#cbd5e1;margin-top:0.5rem;display:block;")),
+            style="background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:1.25rem;" +
+                  ("border-color:#09c209;border-width:2px;" if is_connected else ""),
+        )
+
+    connected_count = len(connected)
+    status_text = f"{connected_count} integration{'s' if connected_count != 1 else ''} connected" if connected_count else "No integrations connected yet"
+
+    return (
+        Title("Integrations — Mentastic"),
+        Style(LANDING_CSS),
+        Nav(
+            A("Mentastic", href="/", cls="nav-brand"),
+            Div(
+                A("About", href="/about"),
+                A("Chat", href="/chat"),
+                A("Dashboard", href="/dashboard"),
+                A("Sign In" if not user else "Chat", href="/signin" if not user else "/chat", cls="nav-cta"),
+                cls="nav-links",
+            ),
+            cls="landing-nav",
+        ),
+        Div(
+            Section(
+                H2("Data Integrations"),
+                P("Connect your tools to build a complete picture of your readiness and performance.", cls="section-sub"),
+                P(status_text, style=f"text-align:center;color:{'#09c209' if connected_count else '#64748b'};"
+                  f"font-weight:{'600' if connected_count else '400'};font-size:0.9rem;margin-bottom:1rem;"),
+                P("Powered by ", A("arcade.dev", href="https://arcade.dev"), " and ",
+                  A("composio.dev", href="https://composio.dev"), " for secure, privacy-aware connections.",
+                  style="text-align:center;color:#94a3b8;font-size:0.8rem;margin-bottom:2rem;"),
+
+                H3("Available", style="color:#3b82f6;margin-bottom:1rem;"),
+                Div(*[_card(*i) for i in ready], style="display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;margin-bottom:2.5rem;"),
+
+                H3("Coming Soon", style="color:#f59e0b;margin-bottom:1rem;"),
+                Div(*[_card(*i) for i in coming], style="display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;margin-bottom:2.5rem;"),
+
+                H3("Planned", style="color:#94a3b8;margin-bottom:1rem;"),
+                Div(*[_card(*i) for i in planned], style="display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;margin-bottom:2rem;"),
+
+                cls="section",
+            ),
+            style="padding-top:4rem;min-height:100vh;background:#f8fafc;",
+        ),
+        Div("2026 Mentastic", cls="landing-footer"),
+    )
+
+
+@rt("/integrations/connect")
+def integration_connect(request, session, name: str = ""):
+    if is_clerk_enabled():
+        _check_clerk_session(request, session)
+    user = session.get("user")
+    if not user:
+        return RedirectResponse("/signin", status_code=303)
+
+    integration = next((i for i in _ALL_INTEGRATIONS if i[0] == name), None)
+    if not integration:
+        return RedirectResponse("/integrations", status_code=303)
+
+    iname, icon, subtitle, detail, status, provider = integration
+
+    return (
+        Title(f"Connect {iname} — Mentastic"),
+        Style(LANDING_CSS),
+        Nav(
+            A("Mentastic", href="/", cls="nav-brand"),
+            Div(A("← Back to Integrations", href="/integrations"), cls="nav-links"),
+            cls="landing-nav",
+        ),
+        Div(
+            Section(
+                Div(
+                    Div(icon, style="font-size:3rem;margin-bottom:1rem;"),
+                    H2(f"Connect {iname}", style="text-align:left;"),
+                    P(subtitle, style="color:#64748b;margin-bottom:1.5rem;"),
+
+                    Div(
+                        H3("What Mentastic will access:", style="color:#093c32;margin-bottom:0.75rem;font-size:0.95rem;"),
+                        P(detail, style="color:#475569;font-size:0.9rem;line-height:1.6;"),
+                        style="background:#f0fdfa;border-radius:8px;padding:1rem;margin-bottom:1.5rem;",
+                    ),
+
+                    Div(
+                        H3("How to connect:", style="color:#093c32;margin-bottom:0.75rem;font-size:0.95rem;"),
+                        Ul(
+                            Li(f"Click the button below to authorize via {provider}"),
+                            Li(f"Grant Mentastic read-only access to your {iname} data"),
+                            Li("Patrick will automatically incorporate your data into insights"),
+                            Li("You can disconnect at any time from the Integrations page"),
+                            style="color:#475569;font-size:0.85rem;line-height:1.8;padding-left:1.25rem;",
+                        ),
+                        style="margin-bottom:1.5rem;",
+                    ),
+
+                    Div(
+                        H3("Privacy:", style="color:#093c32;margin-bottom:0.5rem;font-size:0.95rem;"),
+                        P("Your data is processed locally and never shared with third parties. "
+                          "Mentastic uses read-only access — we never modify your data.",
+                          style="color:#64748b;font-size:0.85rem;"),
+                        style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:1rem;margin-bottom:2rem;",
+                    ),
+
+                    A(f"Connect {iname} via {provider}",
+                      href=f"/integrations/confirm?name={name}",
+                      style="display:inline-block;padding:0.75rem 2rem;background:#09c209;color:#fff;"
+                            "border-radius:8px;font-weight:600;text-decoration:none;font-size:1rem;"),
+                    P("This is a demo — in production, this redirects to the OAuth flow.",
+                      style="color:#94a3b8;font-size:0.75rem;margin-top:0.75rem;"),
+
+                    style="max-width:600px;",
+                ),
+                cls="section",
+            ),
+            style="padding-top:4rem;min-height:100vh;background:#f8fafc;",
+        ),
+    )
+
+
+@rt("/integrations/confirm")
+def integration_confirm(request, session, name: str = ""):
+    """Mock: mark integration as connected."""
+    if is_clerk_enabled():
+        _check_clerk_session(request, session)
+    user = session.get("user")
+    if not user:
+        return RedirectResponse("/signin", status_code=303)
+    user_id = user.get("user_id")
+    if user_id not in _USER_INTEGRATIONS:
+        _USER_INTEGRATIONS[user_id] = set()
+    _USER_INTEGRATIONS[user_id].add(name)
+    return RedirectResponse("/integrations", status_code=303)
+
+
+@rt("/integrations/disconnect")
+def integration_disconnect(request, session, name: str = ""):
+    """Mock: disconnect an integration."""
+    if is_clerk_enabled():
+        _check_clerk_session(request, session)
+    user = session.get("user")
+    if not user:
+        return RedirectResponse("/signin", status_code=303)
+    user_id = user.get("user_id")
+    if user_id in _USER_INTEGRATIONS:
+        _USER_INTEGRATIONS[user_id].discard(name)
+    return RedirectResponse("/integrations", status_code=303)
 
 
 serve(port=int(os.getenv("PORT", "5010")))
