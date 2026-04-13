@@ -792,15 +792,27 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
 .btn-secondary { background: transparent; color: #ffffff; padding: 0.75rem 2rem; border-radius: 8px; font-size: 1rem; font-weight: 600; text-decoration: none; border: 2px solid rgba(255,255,255,0.4); transition: all 0.2s; }
 .btn-secondary:hover { border-color: #fff; background: rgba(255,255,255,0.1); }
 
-/* Mini-chat preview */
-.mini-chat { max-width: 500px; margin: 3rem auto 0; background: rgba(255,255,255,0.08); border-radius: 16px; padding: 1.5rem; backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.12); }
+/* Mini-chat — prominent on landing page */
+.chat-section { padding: 4rem 2rem; background: linear-gradient(180deg, #093c32 0%, #0a4a3a 100%); }
+.chat-section h2 { color: #ffffff; text-align: center; font-size: 1.5rem; margin-bottom: 0.5rem; }
+.chat-section .section-sub { color: rgba(255,255,255,0.7); text-align: center; margin-bottom: 2rem; }
+.mini-chat { max-width: 600px; margin: 0 auto; background: rgba(255,255,255,0.06); border-radius: 16px; padding: 1.5rem; backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.12); }
 .mini-chat-header { font-size: 0.8rem; color: rgba(218,254,245,0.6); margin-bottom: 0.75rem; text-align: left; }
-.mini-chat-msg { background: rgba(255,255,255,0.1); border-radius: 12px; padding: 0.75rem 1rem; margin-bottom: 0.5rem; font-size: 0.9rem; text-align: left; color: #ffffff; }
-.mini-chat-msg.patrick { border-left: 3px solid #09c209; }
+.mini-chat-msg { background: rgba(255,255,255,0.1); border-radius: 12px; padding: 0.75rem 1rem; margin-bottom: 0.5rem; font-size: 0.9rem; text-align: left; color: #ffffff; line-height: 1.5; }
+.mini-chat-msg.patrick { border-left: 3px solid #4ade80; }
 .mini-chat-input { display: flex; gap: 0.5rem; margin-top: 0.75rem; }
-.mini-chat-input input { flex: 1; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.15); border-radius: 8px; padding: 0.6rem 0.75rem; color: #dafef5; font-size: 0.85rem; }
+.mini-chat-input input { flex: 1; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.15); border-radius: 8px; padding: 0.6rem 0.75rem; color: #fff; font-size: 0.85rem; font-family: inherit; }
 .mini-chat-input input::placeholder { color: rgba(218,254,245,0.4); }
-.mini-chat-input button { background: #09c209; color: #fff; border: none; border-radius: 8px; padding: 0.6rem 1rem; font-weight: 600; cursor: pointer; }
+.mini-chat-input button { background: #4ade80; color: #093c32; border: none; border-radius: 8px; padding: 0.6rem 1rem; font-weight: 600; cursor: pointer; font-family: inherit; }
+
+/* Reflection card */
+.reflection-card { background: linear-gradient(135deg, rgba(74,222,128,0.15), rgba(9,194,9,0.08)); border: 1px solid rgba(74,222,128,0.3); border-radius: 12px; padding: 1.25rem; margin-top: 1rem; color: #ffffff; }
+.reflection-card h3 { font-size: 0.9rem; color: #4ade80; margin-bottom: 0.5rem; }
+.reflection-card p { font-size: 0.85rem; line-height: 1.5; margin-bottom: 0.75rem; opacity: 0.9; }
+.reflection-card .reflection-cta { display: flex; gap: 0.75rem; flex-wrap: wrap; margin-top: 0.75rem; }
+.reflection-card .reflection-cta a { padding: 0.5rem 1rem; border-radius: 6px; font-size: 0.8rem; font-weight: 600; text-decoration: none; }
+.reflection-primary { background: #4ade80; color: #093c32; }
+.reflection-secondary { background: transparent; color: #4ade80; border: 1px solid rgba(74,222,128,0.4); }
 
 /* Sections */
 .section { padding: 5rem 2rem; max-width: 1100px; margin: 0 auto; }
@@ -1038,85 +1050,111 @@ def landing(request, session):
     if session.get("user"):
         return RedirectResponse("/chat", status_code=303)
 
+    _anon_thread = str(_uuid.uuid4())
+
     return (
         Title("Mentastic — Human Performance & Readiness"),
         Style(LANDING_CSS),
 
-        # Nav
+        # Nav — minimal: brand + Sign In for returning users only
         Nav(
             A("Mentastic", href="/", cls="nav-brand"),
             Div(
                 A("About", href="/about"),
                 A("Integrations", href="/integrations"),
                 A("Sign In", href="/signin"),
-                A("Get Started", href="/register", cls="nav-cta"),
                 cls="nav-links",
             ),
             cls="landing-nav",
         ),
 
-        # Hero
+        # Hero — individual tension, not B2B messaging
         Section(
-            H1("Build ", Span("power people"), ". Build ", Span("power teams"), "."),
-            P("Mentastic turns fragmented human signals into performance clarity. "
-              "Through Patrick, your AI companion, understand how fatigue, recovery, stress and "
-              "psychological state shape your focus, judgement, readiness and sustainable performance.",
+            H1("Is how you feel aligned with how you ", Span("actually perform"), "?"),
+            P("Fatigue, stress, and poor recovery silently erode focus, judgement, and decision quality. "
+              "Mentastic helps you understand your real state, spot risks early, and stay in sync with your actual capacity.",
               cls="subtitle"),
             Div(
-                A("Get Started Free", href="/register", cls="btn-primary"),
-                A("Learn More", href="/about", cls="btn-secondary"),
+                A("Talk to Patrick", href="#chat-section", cls="btn-primary",
+                  onclick="document.getElementById('chat-section').scrollIntoView({behavior:'smooth'});return false;"),
+                A("Learn more", href="#how-it-works", cls="btn-secondary",
+                  onclick="document.getElementById('how-it-works').scrollIntoView({behavior:'smooth'});return false;"),
                 cls="hero-buttons",
-            ),
-            # Anonymous mini-chat — real WebSocket connection to Patrick
-            Div(
-                Div("Try Patrick — your AI performance companion", cls="mini-chat-header"),
-                Div(id="anon-messages"),
-                Form(
-                    Input(id="anon-input", name="msg", placeholder="Ask Patrick anything...", autocomplete="off"),
-                    Hidden(name="thread_id", value=str(_uuid.uuid4())),
-                    Button("Send"),
-                    cls="mini-chat-input", id="anon-form", ws_send=True,
-                ),
-                hx_ext="ws", ws_connect=f"/anon-ws/{_uuid.uuid4()}",
-                cls="mini-chat",
             ),
             cls="hero",
         ),
 
-        # How it works
+        # Patrick mini-chat — prominent, full-width section
+        Div(
+            H2("Talk to Patrick"),
+            P("Your AI companion for performance and readiness. No account needed — try it now.", cls="section-sub"),
+            Div(
+                Div("Hi, I'm Patrick. Tell me how you're feeling — energy, focus, stress — and I'll help you make sense of it.", cls="mini-chat-msg patrick"),
+                Div(id="anon-messages"),
+                Form(
+                    Input(id="anon-input", name="msg", placeholder="How are you feeling today?", autocomplete="off"),
+                    Hidden(name="thread_id", value=_anon_thread),
+                    Button("Send"),
+                    cls="mini-chat-input", id="anon-form", ws_send=True,
+                ),
+                hx_ext="ws", ws_connect=f"/anon-ws/{_anon_thread}",
+                cls="mini-chat",
+            ),
+            cls="chat-section", id="chat-section",
+        ),
+
+        # How it works — reframed as user journey, not feature list
         Div(
             Section(
-                H2("How It Works"),
-                P("From scattered signals to clear, personalised guidance in four steps.", cls="section-sub"),
+                H2("Your Journey with Mentastic"),
+                P("From the first conversation to sustained performance clarity.", cls="section-sub"),
                 Div(
-                    Div(Div("1", cls="step-num"), H3("Connect"), P("Link wearables, calendars, and self-reports. Mentastic collects passive and active data without adding friction."), cls="step"),
-                    Div(Div("2", cls="step-num"), H3("Understand"), P("AI pattern recognition turns fragmented signals into a coherent picture of your readiness, stress, and recovery state."), cls="step"),
-                    Div(Div("3", cls="step-num"), H3("Act"), P("Patrick provides personalised guidance — not generic advice. Concrete actions matched to your current state and patterns."), cls="step"),
-                    Div(Div("4", cls="step-num"), H3("Sustain"), P("Continuous monitoring, adaptive follow-ups, and resilience building to sustain strong performance without overload."), cls="step"),
+                    Div(Div("1", cls="step-num"), H3("Talk to Patrick"), P("Share how you're feeling. Patrick listens, asks the right questions, and starts building a picture of your state."), cls="step"),
+                    Div(Div("2", cls="step-num"), H3("Get your first insight"), P("Within minutes, you'll see a reflection of your patterns — where fatigue, stress, or poor recovery may be affecting your performance."), cls="step"),
+                    Div(Div("3", cls="step-num"), H3("Connect your data"), P("Link wearables, calendars, and health apps. The more Patrick knows, the more personalised and accurate the insights become."), cls="step"),
+                    Div(Div("4", cls="step-num"), H3("Stay in sync"), P("Ongoing monitoring, adaptive guidance, and resilience building. Patrick helps you sustain strong performance without drifting into overload."), cls="step"),
                     cls="steps-grid",
                 ),
-                cls="section",
+                cls="section", id="how-it-works",
             ),
             cls="section-dark",
         ),
 
-        # Patrick's Tools
+        # Sectors — with context for each environment
         Section(
-            H2("Patrick's Toolkit"),
-            P("Six evidence-based tools for understanding and improving your performance.", cls="section-sub"),
+            H2("Built for High-Responsibility Environments"),
+            P("Where performance quality directly affects safety, outcomes, and people.", cls="section-sub"),
             Div(
-                Div(Div("📋", cls="feature-icon", style="background:#eff6ff"), H3("Readiness Check-In"), P("Quick self-assessment of energy, focus, stress, and mood. Track your state over time."), cls="feature-card"),
-                Div(Div("🔍", cls="feature-icon", style="background:#f5f3ff"), H3("Performance Scan"), P("AI-guided conversation about your current performance state across six key areas."), cls="feature-card"),
-                Div(Div("💚", cls="feature-icon", style="background:#f0fdf4"), H3("Recovery Plan"), P("Personalised physical, cognitive, and emotional recovery recommendations."), cls="feature-card"),
-                Div(Div("⚡", cls="feature-icon", style="background:#fffbeb"), H3("Stress & Load Analysis"), P("Assess your demand-to-resource ratio and burnout risk with Green/Yellow/Red framing."), cls="feature-card"),
-                Div(Div("📊", cls="feature-icon", style="background:#fef2f2"), H3("Readiness Report"), P("View trends over 7, 14, or 30 days. Detect upward stress or declining energy patterns."), cls="feature-card"),
-                Div(Div("🛡", cls="feature-icon", style="background:#ecfeff"), H3("Resilience Builder"), P("30 guided exercises across 6 focus areas: stress, energy, focus, sleep, pressure, general."), cls="feature-card"),
-                cls="features-grid",
+                Div(
+                    H3("🎖 Military & Defence"),
+                    P("Soldiers and operators under sustained pressure. Patrick detects strain before it becomes failure, "
+                      "supports cognitive readiness, and strengthens recovery routines in demanding conditions."),
+                    P("Readiness visibility without friction. Privacy-aware intelligence for command structures.",
+                      style="font-size:0.75rem;color:#94a3b8;margin-top:0.5rem;font-style:italic;"),
+                    cls="sector-card",
+                ),
+                Div(
+                    H3("🏢 Private Sector"),
+                    P("Knowledge workers, managers, and teams. Patrick connects workforce wellbeing to measurable performance — "
+                      "detecting overload before disengagement, and guiding recovery without framing fatigue as weakness."),
+                    P("Early signals before burnout. Smarter support for sustained high performance.",
+                      style="font-size:0.75rem;color:#94a3b8;margin-top:0.5rem;font-style:italic;"),
+                    cls="sector-card",
+                ),
+                Div(
+                    H3("🏥 Healthcare & Frontline"),
+                    P("Doctors, nurses, emergency responders, teachers. Patrick protects human capability in environments "
+                      "where cognitive and emotional demands are relentless and performance quality affects lives."),
+                    P("Continuous insight, not occasional surveys. Prevention at the individual level.",
+                      style="font-size:0.75rem;color:#94a3b8;margin-top:0.5rem;font-style:italic;"),
+                    cls="sector-card",
+                ),
+                cls="sectors-grid",
             ),
             cls="section",
         ),
 
-        # Integrations preview
+        # Integrations
         Div(
             Section(
                 H2("Connect Your Data"),
@@ -1137,23 +1175,10 @@ def landing(request, session):
             cls="section-dark",
         ),
 
-        # Sectors
-        Section(
-            H2("Built for High-Responsibility Environments"),
-            P("One intelligence system. Multiple sectors. One outcome: stronger people, stronger teams.", cls="section-sub"),
-            Div(
-                Div(H3("🎖 Military & Defence"), P("Strengthen operational readiness. Detect strain before it becomes failure. Support cognitive readiness and recovery in demanding conditions."), cls="sector-card"),
-                Div(H3("🏢 Private Sector"), P("Improve performance quality and reduce hidden productivity loss. Connect workforce wellbeing to measurable performance drivers."), cls="sector-card"),
-                Div(H3("🏥 Government & Frontline"), P("Protect human capability where performance quality directly affects safety, service quality and continuity."), cls="sector-card"),
-                cls="sectors-grid",
-            ),
-            cls="section",
-        ),
-
-        # CTA
+        # Footer CTA — registration appears here, after user has seen value
         Div(
-            H2("Ready to perform at your best?"),
-            P("Start with a free conversation with Patrick. No credit card required."),
+            H2("Ready to understand your real state?"),
+            P("Create a free account to get your full assessment, connect your data, and keep the conversation going."),
             Div(
                 A("Create Free Account", href="/register", cls="btn-primary"),
                 A("Sign In", href="/signin", cls="btn-secondary"),
@@ -1178,16 +1203,20 @@ def landing(request, session):
 # ---------------------------------------------------------------------------
 
 _anon_msg_count: Dict[str, int] = {}  # track messages per anon thread
-_ANON_MSG_LIMIT = 5  # after this many messages, suggest signup
+_anon_messages: Dict[str, list] = {}  # store conversation for reflection
+_REFLECTION_AFTER = 3  # generate reflection card after this many exchanges
 
 @app.ws("/anon-ws/{thread_id}")
 async def anon_ws(thread_id: str, msg: str, send):
-    """Handle anonymous chat on the landing page — limited messages, then nudge to register."""
+    """Handle anonymous chat — after 3 exchanges, show reflection card with value."""
     from langchain_core.messages import HumanMessage, AIMessage
     from utils.agent import create_mentastic_agent, set_current_user
 
     count = _anon_msg_count.get(thread_id, 0)
     _anon_msg_count[thread_id] = count + 1
+    if thread_id not in _anon_messages:
+        _anon_messages[thread_id] = []
+    _anon_messages[thread_id].append({"role": "user", "content": msg})
 
     # Show user message
     await send(Div(
@@ -1197,20 +1226,18 @@ async def anon_ws(thread_id: str, msg: str, send):
 
     # Clear input
     await send(Form(
-        Input(id="anon-input", name="msg", placeholder="Ask Patrick anything...", autocomplete="off", autofocus=True),
+        Input(id="anon-input", name="msg", placeholder="How are you feeling today?", autocomplete="off", autofocus=True),
         Hidden(name="thread_id", value=thread_id),
         Button("Send"),
         cls="mini-chat-input", id="anon-form", ws_send=True, hx_swap_oob="outerHTML",
     ))
 
-    if count >= _ANON_MSG_LIMIT:
-        # Nudge to create account
-        signup_url = "/register" if not is_clerk_enabled() else "/signin"
+    if count >= _REFLECTION_AFTER + 2:
+        # After reflection + 2 more messages, gently close
         await send(Div(
             Div(NotStr(
-                f"I'm really enjoying our conversation! To keep going and save your progress, "
-                f'<a href="{signup_url}" style="color:#09c209;font-weight:600;">create a free Mentastic account</a>. '
-                f"I'll remember everything we discussed."
+                "I'd love to keep exploring this with you. Create a free account and I'll remember "
+                "everything we've discussed — plus you'll get your full readiness assessment."
             ), cls="mini-chat-msg patrick"),
             id="anon-messages", hx_swap_oob="beforeend",
         ))
@@ -1241,6 +1268,7 @@ async def anon_ws(thread_id: str, msg: str, send):
 
     # After response, render markdown
     if full_response:
+        _anon_messages[thread_id].append({"role": "assistant", "content": full_response})
         import markdown as _md
         rendered = _md.markdown(full_response, extensions=["tables", "fenced_code", "nl2br"])
         await send(Div(
@@ -1248,6 +1276,49 @@ async def anon_ws(thread_id: str, msg: str, send):
             Div(
                 Span("", id=f"anon-resp-{resp_id}"),  # remove raw span
                 style="display:none",
+            ),
+            id="anon-messages", hx_swap_oob="beforeend",
+        ))
+
+    # After 3 exchanges, generate reflection card — deliver value before asking for account
+    if count == _REFLECTION_AFTER - 1 and full_response:
+        signup_url = "/register"
+        # Generate a personalised reflection based on the conversation
+        user_msgs = " ".join(m["content"] for m in _anon_messages.get(thread_id, []) if m["role"] == "user")
+
+        # Use a quick LLM call to generate the reflection
+        reflection = ""
+        try:
+            refl_agent = create_mentastic_agent()
+            refl_prompt = (
+                f"Based on this brief conversation with a user who said: '{user_msgs}', "
+                f"generate a SHORT (2-3 sentence) reflection card. Format: "
+                f"Start with 'Based on your answers,' then identify ONE specific pattern "
+                f"(e.g. fatigue affecting focus, stress impacting recovery, energy-demand mismatch). "
+                f"End with what Mentastic could help them understand better. "
+                f"Be specific to what they shared, not generic. Max 50 words."
+            )
+            from langchain_core.messages import HumanMessage as HM
+            result = await refl_agent.ainvoke({"messages": [HM(content=refl_prompt)]})
+            if result.get("messages"):
+                reflection = result["messages"][-1].content
+        except Exception:
+            reflection = (
+                "Based on your answers, there may be a gap between how you feel and how you're actually performing. "
+                "Mentastic can help you understand whether fatigue or stress is silently affecting your focus and recovery."
+            )
+
+        await send(Div(
+            Div(
+                H3("Your Quick Reflection"),
+                P(reflection),
+                Div(
+                    A("Create account for full assessment", href=signup_url, cls="reflection-primary"),
+                    A("Learn how it works", href="#how-it-works", cls="reflection-secondary",
+                      onclick="document.getElementById('how-it-works').scrollIntoView({behavior:'smooth'});return false;"),
+                    cls="reflection-cta",
+                ),
+                cls="reflection-card",
             ),
             id="anon-messages", hx_swap_oob="beforeend",
         ))
