@@ -86,17 +86,32 @@ async def run():
         await page.evaluate("window.scrollTo(0, 2200)")
         await capture(page, "landing_integrations", 1)
 
-        # ===== REGISTER =====
+        # ===== SIGNIN (Clerk UI) =====
+        await page.goto(f"{BASE_URL}/signin")
+        await asyncio.sleep(5)
+        await capture(page, "signin_clerk", 1)
+
+        # ===== REGISTER (Clerk UI) =====
         await page.goto(f"{BASE_URL}/register")
-        await capture(page, "register", 1)
+        await asyncio.sleep(5)
+        await capture(page, "register_clerk", 1)
 
-        await page.fill('input[name="email"]', EMAIL)
-        await page.fill('input[name="password"]', PASSWORD)
-        await page.fill('input[name="display_name"]', "Demo User")
-        await capture(page, "register_filled", 0.5)
-
-        await page.click('button[type="submit"]')
-        await asyncio.sleep(3)
+        # Login via fallback auth for chat testing
+        import sys, os
+        sys.path.insert(0, str(ROOT))
+        os.chdir(str(ROOT))
+        from utils.auth import create_user, get_user_by_email
+        if not get_user_by_email(EMAIL):
+            create_user(EMAIL, PASSWORD, "Demo User")
+        await page.evaluate(f"""
+            async () => {{
+                const form = new FormData();
+                form.append('email', '{EMAIL}');
+                form.append('password', '{PASSWORD}');
+                await fetch('/signin', {{ method: 'POST', body: form, redirect: 'follow' }});
+            }}
+        """)
+        await asyncio.sleep(2)
 
         # ===== CHAT: Welcome =====
         await page.goto(f"{BASE_URL}/chat?new=1")

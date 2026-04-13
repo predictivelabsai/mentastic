@@ -722,7 +722,7 @@ class AGUISetup:
 # FastHTML App
 # ---------------------------------------------------------------------------
 
-from utils.clerk import is_clerk_enabled, verify_clerk_token, get_clerk_user, CLERK_PUBLISHABLE_KEY
+from utils.clerk import is_clerk_enabled, verify_clerk_token, get_clerk_user, get_publishable_key
 
 # Build headers — include Clerk JS if configured
 _hdrs = [
@@ -734,7 +734,16 @@ _hdrs = [
     Meta(name="apple-mobile-web-app-status-bar-style", content="black-translucent"),
 ]
 if is_clerk_enabled():
-    _hdrs.append(Script(src="https://cdn.jsdelivr.net/npm/@clerk/clerk-js@latest/dist/clerk.browser.js"))
+    from utils.clerk import _ensure_config, _config
+    _ensure_config()
+    _fapi = _config.get("frontend_api", "")
+    _pk = _config.get("pk", "")
+    _hdrs.extend([
+        Script(src=f"https://{_fapi}/npm/@clerk/ui@1/dist/ui.browser.js",
+               crossorigin="anonymous", defer=True),
+        Script(src=f"https://{_fapi}/npm/@clerk/clerk-js@6/dist/clerk.browser.js",
+               crossorigin="anonymous", defer=True, data_clerk_publishable_key=_pk),
+    ])
 
 app, rt = fast_app(
     exts="ws",
@@ -1320,6 +1329,15 @@ def signin(session, email: str = "", password: str = "", error: str = ""):
     if session.get("user"):
         return RedirectResponse("/chat", status_code=303)
 
+    # Allow fallback email/password login even when Clerk is enabled (for testing + CLI)
+    if email and password:
+        from utils.auth import authenticate
+        user = authenticate(email, password)
+        if not user:
+            return RedirectResponse("/signin?error=Invalid+email+or+password", status_code=303)
+        _session_login(session, user)
+        return RedirectResponse("/chat", status_code=303)
+
     # If Clerk is enabled, show Clerk sign-in component
     if is_clerk_enabled():
         return (
@@ -1337,19 +1355,15 @@ def signin(session, email: str = "", password: str = "", error: str = ""):
                     Div("2026 Mentastic. All rights reserved.", cls="auth-footer"),
                     cls="auth-wrapper",
                 ),
-                Script(f"""
-                    const clerkPubKey = '{CLERK_PUBLISHABLE_KEY}';
-                    async function initClerk() {{
-                        const clerk = new window.Clerk(clerkPubKey);
-                        await clerk.load();
-                        if (clerk.user) {{ window.location.href = '/chat'; return; }}
-                        clerk.mountSignIn(document.getElementById('clerk-signin'), {{
+                Script("""
+                    window.addEventListener('load', async function() {
+                        await Clerk.load({ ui: { ClerkUI: window.__internal_ClerkUICtor } });
+                        if (Clerk.user) { window.location.href = '/chat'; return; }
+                        Clerk.mountSignIn(document.getElementById('clerk-signin'), {
                             afterSignInUrl: '/chat',
                             afterSignUpUrl: '/chat',
-                        }});
-                    }}
-                    if (window.Clerk) initClerk();
-                    else document.addEventListener('DOMContentLoaded', initClerk);
+                        });
+                    });
                 """),
             ),
         )
@@ -1400,19 +1414,15 @@ def register(session, email: str = "", password: str = "", display_name: str = "
                     Div("2026 Mentastic. All rights reserved.", cls="auth-footer"),
                     cls="auth-wrapper",
                 ),
-                Script(f"""
-                    const clerkPubKey = '{CLERK_PUBLISHABLE_KEY}';
-                    async function initClerk() {{
-                        const clerk = new window.Clerk(clerkPubKey);
-                        await clerk.load();
-                        if (clerk.user) {{ window.location.href = '/chat'; return; }}
-                        clerk.mountSignUp(document.getElementById('clerk-signup'), {{
+                Script("""
+                    window.addEventListener('load', async function() {
+                        await Clerk.load({ ui: { ClerkUI: window.__internal_ClerkUICtor } });
+                        if (Clerk.user) { window.location.href = '/chat'; return; }
+                        Clerk.mountSignUp(document.getElementById('clerk-signup'), {
                             afterSignInUrl: '/chat',
                             afterSignUpUrl: '/chat',
-                        }});
-                    }}
-                    if (window.Clerk) initClerk();
-                    else document.addEventListener('DOMContentLoaded', initClerk);
+                        });
+                    });
                 """),
             ),
         )
@@ -1455,14 +1465,12 @@ def logout(session):
         return (
             Title("Logging out..."),
             Style(LANDING_CSS),
-            Script(f"""
-                async function clerkLogout() {{
-                    const clerk = new window.Clerk('{CLERK_PUBLISHABLE_KEY}');
-                    await clerk.load();
-                    await clerk.signOut();
+            Script("""
+                window.addEventListener('load', async function() {
+                    await Clerk.load({ ui: { ClerkUI: window.__internal_ClerkUICtor } });
+                    await Clerk.signOut();
                     window.location.href = '/';
-                }}
-                clerkLogout();
+                });
             """),
         )
     return RedirectResponse("/", status_code=303)

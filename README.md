@@ -2,6 +2,8 @@
 
 Human performance and readiness platform — AI-powered decision support for individuals, teams, and institutions. Combines LangGraph agents, WebSocket streaming, and a 3-pane FastHTML chat interface with Patrick, your AI companion for performance, readiness, and resilience.
 
+![Mentastic Demo](docs/demo_video.gif)
+
 ## Features
 
 **Patrick AI Companion** — 6 tools for human performance and readiness:
@@ -20,18 +22,22 @@ Human performance and readiness platform — AI-powered decision support for ind
 - **Center pane** — WebSocket streaming chat with 6 welcome cards
 - **Right pane** (toggled) — Thinking trace showing tool calls and agent activity
 
+**Authentication** — Clerk (email / Google / Apple) with fallback email/password:
+- Anonymous mini-chat on landing page — try Patrick before signing up
+- After 5 messages, Patrick suggests creating an account
+- Clerk handles sign-in/sign-up UI with social login (Google, Apple, Facebook)
+- Falls back to email/password when Clerk is not configured
+
 **Additional Features:**
 - Configurable LLM model via `MODEL_NAME` env var (default: `grok-4-fast-reasoning`)
 - Chat history persistence in PostgreSQL
-- bcrypt password hashing + JWT session management
+- 12 data integrations (wearables, calendar, social) via arcade.dev / composio.dev
 - PWA support (manifest, service worker, responsive CSS)
 - Docker deployment ready
 
 ## Demo
 
-![Mentastic Demo](docs/demo_video.gif)
-
-Full walkthrough video: [docs/demo_video.mp4](docs/demo_video.mp4) | All screenshots: [screenshots/](screenshots/)
+Full walkthrough: [docs/demo_video.mp4](docs/demo_video.mp4) | All screenshots: [screenshots/](screenshots/)
 
 ## Quick Start
 
@@ -72,6 +78,8 @@ docker compose up --build
 | `XAI_API_KEY` | (required) | XAI API key for Grok LLM |
 | `MODEL_NAME` | `grok-4-fast-reasoning` | LLM model name (configurable) |
 | `JWT_SECRET` | auto-generated | Secret for JWT session signing |
+| `CLERK_PUBLISHABLE_KEY` | (optional) | Clerk publishable key for social login |
+| `CLERK_SECRET_KEY` | (optional) | Clerk secret key for JWT verification |
 
 ## Tech Stack
 

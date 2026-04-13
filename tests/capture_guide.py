@@ -81,18 +81,35 @@ async def run():
         await page.screenshot(path=str(SCREENSHOTS_DIR / "03_landing_integrations.png"))
         print("  captured  03_landing_integrations.png")
 
-        # --- 04: Register page ---
-        await page.goto(f"{BASE_URL}/register")
-        await asyncio.sleep(1)
-        await page.screenshot(path=str(SCREENSHOTS_DIR / "04_register.png"))
-        print("  captured  04_register.png")
+        # --- 04: Sign-in page (Clerk or fallback) ---
+        await page.goto(f"{BASE_URL}/signin")
+        await asyncio.sleep(5)  # wait for Clerk JS to mount
+        await page.screenshot(path=str(SCREENSHOTS_DIR / "04_signin.png"))
+        print("  captured  04_signin.png")
 
-        # --- Register the demo user ---
-        await page.fill('input[name="email"]', EMAIL)
-        await page.fill('input[name="password"]', PASSWORD)
-        await page.fill('input[name="display_name"]', "Demo User")
-        await page.click('button[type="submit"]')
-        await asyncio.sleep(3)
+        # --- 04b: Register page ---
+        await page.goto(f"{BASE_URL}/register")
+        await asyncio.sleep(5)
+        await page.screenshot(path=str(SCREENSHOTS_DIR / "04b_register.png"))
+        print("  captured  04b_register.png")
+
+        # --- Login via fallback auth (POST to /signin with email+password) ---
+        import sys, os
+        sys.path.insert(0, str(ROOT))
+        os.chdir(str(ROOT))
+        from utils.auth import create_user, get_user_by_email
+        if not get_user_by_email(EMAIL):
+            create_user(EMAIL, PASSWORD, "Demo User")
+        # POST login form via page.evaluate (bypasses Clerk UI)
+        await page.evaluate(f"""
+            async () => {{
+                const form = new FormData();
+                form.append('email', '{EMAIL}');
+                form.append('password', '{PASSWORD}');
+                const resp = await fetch('/signin', {{ method: 'POST', body: form, redirect: 'follow' }});
+            }}
+        """)
+        await asyncio.sleep(2)
 
         # --- 05: Chat welcome ---
         await page.goto(f"{BASE_URL}/chat?new=1")
@@ -153,13 +170,16 @@ async def run():
         await page.screenshot(path=str(SCREENSHOTS_DIR / "13_mobile_landing.png"))
         print("  captured  13_mobile_landing.png")
 
-        # --- 14: Mobile chat ---
-        await page.goto(f"{BASE_URL}/signin")
+        # --- 14: Mobile chat (re-login via fetch) ---
+        await page.evaluate(f"""
+            async () => {{
+                const form = new FormData();
+                form.append('email', '{EMAIL}');
+                form.append('password', '{PASSWORD}');
+                await fetch('/signin', {{ method: 'POST', body: form, redirect: 'follow' }});
+            }}
+        """)
         await asyncio.sleep(1)
-        await page.fill('input[name="email"]', EMAIL)
-        await page.fill('input[name="password"]', PASSWORD)
-        await page.click('button[type="submit"]')
-        await asyncio.sleep(2)
         await page.goto(f"{BASE_URL}/chat?new=1")
         await asyncio.sleep(3)
         await page.screenshot(path=str(SCREENSHOTS_DIR / "14_mobile_chat.png"))

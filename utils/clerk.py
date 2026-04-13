@@ -7,6 +7,7 @@ This module verifies the session token on the backend using Clerk's JWKS.
 
 import os
 import logging
+import base64
 from typing import Optional, Dict
 from functools import lru_cache
 
@@ -15,40 +16,55 @@ import httpx
 
 logger = logging.getLogger(__name__)
 
-CLERK_SECRET_KEY = os.getenv("CLERK_SECRET_KEY", "")
-CLERK_PUBLISHABLE_KEY = os.getenv("CLERK_PUBLISHABLE_KEY", "")
-CLERK_FRONTEND_API = ""
+# Lazy-loaded config (env vars may not be set at import time)
+_config = {}
 
-# Extract frontend API URL from publishable key
-# pk_test_xxx.clerk.accounts.dev → xxx.clerk.accounts.dev
-if CLERK_PUBLISHABLE_KEY:
-    import base64
-    try:
-        # The publishable key is pk_test_ or pk_live_ + base64(frontend_api)
-        prefix = CLERK_PUBLISHABLE_KEY.split("_", 2)[-1]  # after pk_test_ or pk_live_
-        # Remove trailing $ if present
-        padded = prefix + "=" * (4 - len(prefix) % 4) if len(prefix) % 4 else prefix
-        CLERK_FRONTEND_API = base64.b64decode(padded).decode().rstrip("$")
-        logger.info(f"Clerk frontend API: {CLERK_FRONTEND_API}")
-    except Exception as e:
-        logger.warning(f"Could not parse Clerk publishable key: {e}")
+
+def _ensure_config():
+    """Load Clerk config from env vars on first use."""
+    if _config:
+        return
+    _config["pk"] = os.getenv("CLERK_PUBLISHABLE_KEY", "")
+    _config["sk"] = os.getenv("CLERK_SECRET_KEY", "")
+    _config["frontend_api"] = ""
+    pk = _config["pk"]
+    if pk:
+        try:
+            prefix = pk.split("_", 2)[-1]
+            padded = prefix + "=" * (4 - len(prefix) % 4) if len(prefix) % 4 else prefix
+            _config["frontend_api"] = base64.b64decode(padded).decode().rstrip("$")
+            logger.info(f"Clerk frontend API: {_config['frontend_api']}")
+        except Exception as e:
+            logger.warning(f"Could not parse Clerk publishable key: {e}")
+
+
+def is_clerk_enabled() -> bool:
+    """Check if Clerk is configured."""
+    _ensure_config()
+    return bool(_config.get("pk") and _config.get("sk"))
+
+
+def get_publishable_key() -> str:
+    _ensure_config()
+    return _config.get("pk", "")
 
 
 @lru_cache(maxsize=1)
 def _get_jwks():
     """Fetch Clerk's JWKS (cached)."""
-    if CLERK_SECRET_KEY:
-        # Use Backend API with secret key
+    _ensure_config()
+    sk = _config.get("sk", "")
+    frontend_api = _config.get("frontend_api", "")
+    if sk:
         r = httpx.get(
             "https://api.clerk.com/v1/jwks",
-            headers={"Authorization": f"Bearer {CLERK_SECRET_KEY}"},
+            headers={"Authorization": f"Bearer {sk}"},
             timeout=10,
         )
         r.raise_for_status()
         return r.json()
-    elif CLERK_FRONTEND_API:
-        # Use Frontend API JWKS endpoint
-        r = httpx.get(f"https://{CLERK_FRONTEND_API}/.well-known/jwks.json", timeout=10)
+    elif frontend_api:
+        r = httpx.get(f"https://{frontend_api}/.well-known/jwks.json", timeout=10)
         r.raise_for_status()
         return r.json()
     return None
@@ -68,32 +84,18 @@ def verify_clerk_token(token: str) -> Optional[Dict]:
     """
     Verify a Clerk session JWT and return the decoded payload.
     Returns None if verification fails.
-
-    The payload contains:
-    - sub: Clerk user ID (e.g., "user_2abc...")
-    - email: User's email (if available in session claims)
-    - exp, iat, nbf: Timestamps
     """
     if not token:
         return None
-
     try:
         public_key = _get_public_key()
         if not public_key:
             logger.warning("No Clerk public key available")
             return None
-
-        payload = jwt.decode(
-            token,
-            public_key,
-            algorithms=["RS256"],
-            options={
-                "verify_exp": True,
-                "verify_iat": True,
-                "verify_nbf": True,
-            },
+        return jwt.decode(
+            token, public_key, algorithms=["RS256"],
+            options={"verify_exp": True, "verify_iat": True, "verify_nbf": True},
         )
-        return payload
     except jwt.ExpiredSignatureError:
         logger.debug("Clerk token expired")
         return None
@@ -104,17 +106,18 @@ def verify_clerk_token(token: str) -> Optional[Dict]:
 
 def get_clerk_user(user_id: str) -> Optional[Dict]:
     """Fetch user details from Clerk's Backend API."""
-    if not CLERK_SECRET_KEY:
+    _ensure_config()
+    sk = _config.get("sk", "")
+    if not sk:
         return None
     try:
         r = httpx.get(
             f"https://api.clerk.com/v1/users/{user_id}",
-            headers={"Authorization": f"Bearer {CLERK_SECRET_KEY}"},
+            headers={"Authorization": f"Bearer {sk}"},
             timeout=10,
         )
         r.raise_for_status()
         data = r.json()
-        # Extract useful fields
         email = ""
         if data.get("email_addresses"):
             email = data["email_addresses"][0].get("email_address", "")
@@ -129,8 +132,3 @@ def get_clerk_user(user_id: str) -> Optional[Dict]:
     except Exception as e:
         logger.error(f"Failed to fetch Clerk user {user_id}: {e}")
         return None
-
-
-def is_clerk_enabled() -> bool:
-    """Check if Clerk is configured."""
-    return bool(CLERK_PUBLISHABLE_KEY and CLERK_SECRET_KEY)
