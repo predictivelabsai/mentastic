@@ -10,3 +10,5 @@ python-dotenv
 httpx
 pydantic
 markdown
+fastapi
+uvicorn

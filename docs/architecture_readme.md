@@ -483,6 +483,74 @@ classDiagram
 
 ---
 
+## Local API Simulator
+
+The `api/` folder contains a FastAPI mock of the `mentastic-ai` backend, allowing frontend development and testing without the real backend infrastructure.
+
+```
+api/
+├── __init__.py
+├── schemas.py      # Pydantic models — exact match of backend contracts
+└── simulator.py    # FastAPI app with all 8 endpoints + mock logic
+```
+
+The simulator runs on port 8181 (same as the real backend) and implements all endpoint contracts:
+
+```mermaid
+graph TB
+    subgraph "Browser (FastHTML + HTMX)"
+        UI[3-Pane Chat UI]
+        WS[WebSocket]
+    end
+
+    subgraph "Frontend (app.py :5010)"
+        AGUI[AGUIThread]
+        LOCAL[Local LangGraph Agent<br/>fallback when no BACKEND_API_URL]
+    end
+
+    subgraph "API Layer (port 8181)"
+        SIM[api/simulator.py<br/>FastAPI Mock Server]
+        REAL[mentastic-ai<br/>Real Backend]
+    end
+
+    UI -->|WS| AGUI
+    AGUI -->|BACKEND_API_URL set| SIM
+    AGUI -->|BACKEND_API_URL unset| LOCAL
+    AGUI -.->|production| REAL
+
+    subgraph "Simulator Endpoints"
+        H[GET /health]
+        C1[POST /v0/conversation]
+        C2[POST /v0/conversation/stream<br/>SSE: TOKEN → DONE]
+        C3[POST /v0/conversation/widget-interaction]
+        Q1[POST /v0/questionnaires/who5]
+        Q2[GET /v0/questionnaires/who5_results]
+        Q3[POST /v0/questionnaires/who5_results]
+        Q4[POST /v0/questionnaires/onboarding]
+    end
+
+    SIM --> H
+    SIM --> C1
+    SIM --> C2
+    SIM --> C3
+    SIM --> Q1
+    SIM --> Q2
+    SIM --> Q3
+    SIM --> Q4
+```
+
+**Key design decisions:**
+- **No authentication** — simulator skips JWT verification so curl/httpx work directly
+- **In-memory state** — sessions, WHO-5 progress, and onboarding state are stored in Python dicts (reset on restart)
+- **Identical schemas** — `api/schemas.py` uses the same Pydantic models as the backend, so switching URLs is the only change needed
+- **Realistic streaming** — SSE events use the same `TOKEN`/`DONE`/`ERROR` format with ~30ms inter-token delay
+
+Start with `.venv/bin/python -m api.simulator`. Swagger docs at `http://localhost:8181/docs`.
+
+See [local_api_docs.md](local_api_docs.md) for the full API reference.
+
+---
+
 ## Deployment
 
 Single Docker container on Coolify at `mentastic.predictivelabs.ai`. PostgreSQL, XAI API, and Clerk are external services.

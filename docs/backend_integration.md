@@ -148,6 +148,85 @@ Configurable per-request via `llm_provider` and `llm_model` parameters.
 
 ---
 
+## Local API Simulator
+
+Before integrating with the real backend, use the local API simulator to develop and test the frontend integration layer. The simulator lives in `api/` and mirrors all backend endpoints with mock responses and in-memory state.
+
+### Setup
+
+```bash
+# Install dependencies (fastapi, uvicorn already in requirements.txt)
+pip install -r requirements.txt
+
+# Start the simulator
+.venv/bin/python -m api.simulator
+# Runs on http://localhost:8181 (same port as real backend)
+# Swagger docs: http://localhost:8181/docs
+```
+
+### Configure the frontend
+
+Add to `.env`:
+```
+BACKEND_API_URL=http://localhost:8181
+```
+
+The frontend should check this variable. When set, `AGUIThread._handle_ai_run()` calls the simulator instead of the local LangGraph agent. When unset, the local agent is used as a fallback.
+
+### What the simulator provides
+
+| Endpoint | Simulator Behavior |
+|----------|-------------------|
+| `GET /health` | Always returns `{"status": "healthy"}` |
+| `POST /v0/conversation` | Topic-aware mock replies (detects greetings, sleep, stress, goals, check-ins, reports) |
+| `POST /v0/conversation/stream` | SSE stream — word-by-word TOKEN events (~30ms/token) + DONE event with full message |
+| `POST /v0/conversation/widget-interaction` | Logs to in-memory list, returns 202 |
+| `POST /v0/questionnaires/who5` | Stateful 5-question WHO-5 flow with real answer choices |
+| `GET /v0/questionnaires/who5_results` | Returns mock dimension scores |
+| `POST /v0/questionnaires/who5_results` | Saves to in-memory dict |
+| `POST /v0/questionnaires/onboarding` | Stateful 3-question onboarding flow |
+
+### Schemas
+
+`api/schemas.py` contains Pydantic models that exactly match the backend contracts (`ChatRequest`, `ChatResponse`, `StreamingEvent`, `Who5Request`, etc.). When switching from simulator to real backend, only the URL changes — request/response shapes are identical.
+
+### Testing the simulator
+
+```bash
+# Health check
+curl http://localhost:8181/health
+
+# Non-streaming chat
+curl -X POST http://localhost:8181/v0/conversation \
+  -H "Content-Type: application/json" \
+  -d '{"user_id":"test","user_input":"How is my sleep?"}'
+
+# Streaming chat (watch SSE events)
+curl -N -X POST http://localhost:8181/v0/conversation/stream \
+  -H "Content-Type: application/json" \
+  -d '{"user_id":"test","user_input":"hello"}'
+
+# WHO-5 start
+curl -X POST http://localhost:8181/v0/questionnaires/who5 \
+  -H "Content-Type: application/json" \
+  -d '{"user_id":"test","user_input":"hello","session_id":"s1"}'
+```
+
+### Simulator vs real backend
+
+| Aspect | Simulator | Real Backend |
+|--------|-----------|--------------|
+| Auth | None (no JWT required) | JWT via Clerk JWKS |
+| LLM | Mock responses (no API calls) | OpenAI/Anthropic/Google/Mistral |
+| Database | In-memory dicts (lost on restart) | PostgreSQL (30+ tables) |
+| Streaming | Word-by-word split of pre-built reply | Real LLM token streaming |
+| Agent | No agent — pattern matching | 6-node LangGraph StateGraph |
+| Port | 8181 | 8181 |
+
+For full API reference, see [local_api_docs.md](local_api_docs.md).
+
+---
+
 ## Integration Steps
 
 ### Phase 1: Connect Frontend to Backend API (SSE streaming)

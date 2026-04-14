@@ -128,6 +128,30 @@ python tests/capture_video.py
 | Config | 2 | Environment vars, app imports |
 | **Total** | **19** | **All pass** |
 
+## Local API Simulator
+
+The `api/` folder contains a FastAPI mock of the `mentastic-ai` backend. It mirrors all 8 backend endpoints with in-memory state, so the frontend can be developed and tested without running the real backend.
+
+```bash
+# Start the simulator (port 8181, same as real backend)
+.venv/bin/python -m api.simulator
+
+# Swagger docs at http://localhost:8181/docs
+```
+
+| Method | Path | Description |
+|--------|------|-------------|
+| `GET` | `/health` | Health check |
+| `POST` | `/v0/conversation` | Mock chat reply |
+| `POST` | `/v0/conversation/stream` | SSE streaming (TOKEN + DONE events) |
+| `POST` | `/v0/conversation/widget-interaction` | Log widget interaction (202) |
+| `POST` | `/v0/questionnaires/who5` | Stateful WHO-5 flow (5 questions) |
+| `GET` | `/v0/questionnaires/who5_results` | Mock WHO-5 scores |
+| `POST` | `/v0/questionnaires/who5_results` | Save WHO-5 summary |
+| `POST` | `/v0/questionnaires/onboarding` | Stateful onboarding flow (3 questions) |
+
+Set `BACKEND_API_URL=http://localhost:8181` in `.env` to point the frontend at the simulator. See [docs/local_api_docs.md](docs/local_api_docs.md) for full API reference.
+
 ## Architecture
 
 ```
@@ -136,6 +160,10 @@ mentastic/
 ├── requirements.txt          # Python dependencies
 ├── Dockerfile                # Container image
 ├── docker-compose.yaml       # Single-service deployment
+├── api/
+│   ├── __init__.py
+│   ├── schemas.py            # Pydantic models (mirrors mentastic-ai contracts)
+│   └── simulator.py          # FastAPI mock server (8 endpoints, port 8181)
 ├── sql/
 │   └── 01_create_schema.sql  # PostgreSQL schema (5 tables)
 ├── utils/
@@ -152,6 +180,9 @@ mentastic/
 │   └── capture_video.py      # Playwright video capture
 ├── screenshots/              # UI screenshots (13 images)
 └── docs/
+    ├── local_api_docs.md     # Local API simulator reference
+    ├── backend_integration.md # Backend integration plan
+    ├── architecture_readme.md # Architecture deep-dive
     ├── demo_video.mp4        # Product demo video
     ├── demo_video.gif        # Animated preview
     └── frames/               # Individual video frames
